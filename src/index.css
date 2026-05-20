@@ -1,0 +1,61 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@700&family=Work+Sans:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+:root {
+  --brand-heading-font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --brand-heading-font-size: 48px;
+  --brand-heading-font-weight: 700;
+}
+
+@theme {
+  --font-sans: "Work Sans", ui-sans-serif, system-ui, sans-serif;
+  
+  --color-primary: #0a1f44;
+  --color-primary-dark: #061530;
+  --color-primary-light: #1a3a6b;
+  --color-secondary: #f0a500;
+  --color-secondary-dark: #c98a00;
+  --color-secondary-light: #ffd166;
+  --color-surface: #ffffff;
+  --color-surface-soft: #f5f7fa;
+  --color-border: #e2e6ed;
+  
+  --color-primary-container: #0a1f44;
+  --color-on-primary: #ffffff;
+  --color-secondary-container: #ffb21d;
+  --color-on-secondary-container: #6b4800;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f5f3f7;
+  --color-surface-container: #efedf1;
+  --color-surface-container-high: #e9e7eb;
+  --color-surface-container-highest: #e4e2e5;
+  --color-on-surface: #1b1b1e;
+  --color-on-surface-variant: #44464e;
+  --color-outline: #75777f;
+  --color-outline-variant: #c5c6cf;
+}
+
+@layer base {
+  body {
+    @apply bg-[--color-background] text-[--color-on-background] font-sans h-full;
+  }
+}
+
+@layer components {
+  .brand-heading {
+    font-family: var(--brand-heading-font-family);
+    font-size: var(--brand-heading-font-size);
+    font-weight: var(--brand-heading-font-weight);
+    line-height: 1;
+    letter-spacing: 0;
+  }
+}
+
+.chart-gradient-primary { 
+  background: linear-gradient(180deg, rgba(240, 165, 0, 0.2) 0%, rgba(240, 165, 0, 0) 100%); 
+}
+
+.glass-card { 
+  background: rgba(255, 255, 255, 0.8); 
+  backdrop-filter: blur(8px); 
+}
