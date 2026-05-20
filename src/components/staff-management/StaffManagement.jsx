@@ -4,17 +4,17 @@ import { cn } from "../../lib/utlis.js";
 import Pagination from "../common/Pagination.jsx";
 
 const INITIAL_STAFF = [
-  { id: 1, name: "Dr. Nawab Khan", role: "Director", dept: "Management", phone: "98765-43210", email: "nawab@nawabinstitute.com", joining: "2005-01-01", status: "Active" },
+  { id: 1, name: "Dr. Nawab Khan", role: "Teacher", dept: "Management", phone: "98765-43210", email: "nawab@nawabinstitute.com", joining: "2005-01-01", status: "Active" },
   { id: 2, name: "Prof. Sunil Sharma", role: "HOD - Computer Science", dept: "Computer Science", phone: "87654-32109", email: "sunil@nawabinstitute.com", joining: "2008-06-15", status: "Active" },
-  { id: 3, name: "Ms. Priya Verma", role: "Faculty", dept: "Computer Science", phone: "76543-21098", email: "priya@nawabinstitute.com", joining: "2015-07-01", status: "Active" },
+  { id: 3, name: "Ms. Priya Verma", role: "Accountant", dept: "Computer Science", phone: "76543-21098", email: "priya@nawabinstitute.com", joining: "2015-07-01", status: "Active" },
   { id: 4, name: "Mr. Rajesh Gupta", role: "Faculty", dept: "Business Studies", phone: "65432-10987", email: "rajesh@nawabinstitute.com", joining: "2017-08-01", status: "Active" },
   { id: 5, name: "Ms. Anjali Singh", role: "Lab Instructor", dept: "Computer Science", phone: "54321-09876", email: "anjali@nawabinstitute.com", joining: "2020-01-15", status: "Active" },
   { id: 6, name: "Mr. Vikram Mehta", role: "Faculty", dept: "Hardware & Networking", phone: "43210-98765", email: "vikram@nawabinstitute.com", joining: "2019-03-01", status: "Active" },
-  { id: 7, name: "Ms. Sunita Kaur", role: "Admin Staff", dept: "Administration", phone: "32109-87654", email: "sunita@nawabinstitute.com", joining: "2018-11-01", status: "Inactive" },
+  { id: 7, name: "Ms. Sunita Kaur", role: "Admin Staff", dept: "Administration", phone: "32109-87654", email: "sunita@nawabinstitute.com", joining: "2018-11-01", status: "Resigned" },
 ];
 
-const DEPTS = ["All", "Computer Science", "Business Studies", "Hardware & Networking", "Administration", "Management"];
-const ROLES = ["Director", "HOD - Computer Science", "Faculty", "Lab Instructor", "Admin Staff", "Accountant"];
+const DEPTS = ["All", "Computer Science", "Hardware & Networking", "Administration", "Management"];
+const ROLES = ["Teacher", "Faculty", "Lab Instructor", "Admin Staff", "Accountant"];
 const EMPTY = { name: "", role: ROLES[2], dept: DEPTS[1], phone: "", email: "", joining: "", status: "Active" };
 
 export default function StaffManagement() {
@@ -296,7 +296,7 @@ export default function StaffManagement() {
                 }}
                   className="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-[13px] outline-none focus:border-primary"
                 >
-                  {["Active", "Inactive"].map((item) => <option key={item}>{item}</option>)}
+                  {["Working", "Resigned","Terminated"].map((item) => <option key={item}>{item}</option>)}
                 </select>
               </div>
             </div>

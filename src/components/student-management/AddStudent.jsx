@@ -19,11 +19,21 @@ const initialForm = {
 };
 
 const courses = [
-  "Computer Science",
-  "Electrical Eng.",
-  "Civil Eng.",
-  "Business Studies",
-  "Hardware & Networking",
+  "Diploma in Computer Application",
+  "Advance Diploma in Computer Application",
+  "Diploma in Business Management",
+  "Diploma in Business Administration",
+  "Diploma in Hardware & Networking",
+  "Diploma in Digital Marketing",
+  "Basic Computer Course",
+  "Advance Basic",
+  "Tally ERP Course",
+  "CorelDraw Course",
+  "Adobe Photoshop Course",
+  "HTML & Web Designing",
+  "Visual Basic",
+  "Computer Typing",
+  "Internet & Email"
 ];
 
 export default function AddStudent() {
