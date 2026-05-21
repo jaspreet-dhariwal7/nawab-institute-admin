@@ -19,7 +19,7 @@ export default function dasRouting() {
       <Routes>
           <Route path="/" element={<Login />} />
 
-          <Route element={<Layout />}>s
+          <Route element={<Layout />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/students" element={<StudentManagement />} />
           <Route path="/students/add" element={<AddStudent />} />

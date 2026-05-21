@@ -280,7 +280,7 @@ useEffect(() => {
 
           <div>
             <label className="mb-1.5 block text-[12px] font-bold text-on-surface-variant">ID Proof</label>
-            <div className="mb-3 grid h-28 w-28 place-items-center overflow-hidden rounded-xl border border-outline-variant bg-slate-50 px-3">
+            <div className="mb-3 grid h-28 w-28 place-items-center overflow-hidden rounded-xl border border-outline-variant bg-slate-50 ">
               {idProofPreview ? (
                 form.idProof?.type?.startsWith("image/") ? (
                   <img src={idProofPreview} alt="ID preview" className="h-full w-full object-cover" />
@@ -304,7 +304,7 @@ useEffect(() => {
 
             <div>
             <label className="mb-1.5 block text-[12px] font-bold text-on-surface-variant">Highest Qualification</label>
-            <div className="mb-3 grid h-28 w-28 place-items-center overflow-hidden rounded-xl border border-outline-variant bg-slate-50 px-3">
+            <div className="mb-3 grid h-28 w-28 place-items-center overflow-hidden rounded-xl border border-outline-variant bg-slate-50 ">
               {qualificationPreview ? (
                 form.highestQualification?.type?.startsWith("image/") ? (
                   <img src={qualificationPreview} alt="Qualification preview" className="h-full w-full object-cover" />
