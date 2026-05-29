@@ -18,6 +18,7 @@ export default function dasRouting() {
     <BrowserRouter>
       <Routes>
           <Route path="/" element={<Login />} />
+          <Route path="/login" element={<Login />} />
 
           <Route element={<Layout />}>
           <Route path="/dashboard" element={<Dashboard />} />

@@ -1,38 +1,88 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft, Plus, Save, Trash2 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { mockCourses } from "../../lib/data.js";
+import { callApi, getAuthHeaders } from "../../services/ApiService.js";
+import toast from "react-hot-toast";
 
 const initialForm = {
   title: "",
   type: "",
-  status: "Active",
+  status: "upcoming",
   duration: "",
 
   subjects: [""],
   description: "",
 };
 
-const types = ["Diploma", "Short-term"];
-const statuses = ["Active", "Upcoming", "Archived"];
+const types = [
+  { label: "Diploma", value: "diploma" },
+  { label: "Short-Term", value: "short_term" },
+];
+
+const statuses = [
+  { label: "Active", value: "active" },
+  { label: "Upcoming", value: "upcoming" },
+  { label: "Archived", value: "archived" },
+];
+
+const getOptionValue = (options, value) => {
+  if (!value) return "";
+  const matchedOption = options.find((option) => (
+    option.value === value || option.label.toLowerCase() === String(value).toLowerCase()
+  ));
+  return matchedOption ? matchedOption.value : value;
+};
+
+const buildCoursePayload = (form) => ({
+  title: form.title.trim(),
+  type: form.type,
+  status: form.status,
+  duration: form.duration.trim(),
+  subjects: form.subjects.map((subject) => subject.trim()).filter(Boolean),
+  description: form.description.trim(),
+});
+
+const getApiErrors = (data) => {
+  if (!data || typeof data !== "object" || Array.isArray(data)) return {};
+
+  return Object.entries(data).reduce((nextErrors, [key, value]) => {
+    nextErrors[key] = Array.isArray(value) ? value.join(" ") : String(value);
+    return nextErrors;
+  }, {});
+};
+
+const getSubjects = (subjects) => {
+  if (Array.isArray(subjects)) {
+    return subjects.length > 0 ? subjects : [""];
+  }
+
+  if (typeof subjects === "string" && subjects.trim()) {
+    return subjects.split(",").map((subject) => subject.trim()).filter(Boolean);
+  }
+
+  return [""];
+};
+
+const getCourseForm = (course) => ({
+  ...initialForm,
+  title: course.title || "",
+  type: getOptionValue(types, course.type),
+  status: getOptionValue(statuses, course.status),
+  duration: course.duration || "",
+  subjects: getSubjects(course.subjects),
+  description: course.description || "",
+});
 
 export default function CourseForm({ mode = "add" }) {
   const { courseId } = useParams();
   const navigate = useNavigate();
-  const course = mockCourses.find((item) => item.id === courseId);
   const isView = mode === "view";
   const isEdit = mode === "edit";
-  const [form, setForm] = useState(() => course ? {
-    ...initialForm,
-    title: course.title,
-    type: course.type,
-    status: course.status,
-    duration: course.duration,
-    subjects: Array.isArray(course.subjects) && course.subjects.length > 0 ? course.subjects : [""],
-    description: course.description,
-  } : initialForm);
+  const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState({});
   const [showSuccess, setShowSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [courseLoading, setCourseLoading] = useState(false);
 
   const title = isView ? "View Course" : isEdit ? "Edit Course" : "Add Course";
   const subtitle = isView
@@ -40,6 +90,40 @@ export default function CourseForm({ mode = "add" }) {
     : isEdit
       ? "Update course details and curriculum information."
       : "Create a new course program.";
+
+  useEffect(() => {
+    if (!courseId || (!isEdit && !isView)) return undefined;
+
+    let isActive = true;
+
+    const fetchCourse = async () => {
+      try {
+        setCourseLoading(true);
+        const response = await callApi({
+          url: `/courses/${courseId}/`,
+          method: "get",
+        });
+
+        if (isActive) {
+          setForm(getCourseForm(response));
+        }
+      } catch {
+        if (isActive) {
+          setForm(initialForm);
+        }
+      } finally {
+        if (isActive) {
+          setCourseLoading(false);
+        }
+      }
+    };
+
+    fetchCourse();
+
+    return () => {
+      isActive = false;
+    };
+  }, [courseId, isEdit, isView]);
 
   const updateField = (field, value) => {
     setForm((current) => ({ ...current, [field]: value }));
@@ -83,7 +167,7 @@ export default function CourseForm({ mode = "add" }) {
     return nextErrors;
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     const nextErrors = validateForm();
 
@@ -93,7 +177,25 @@ export default function CourseForm({ mode = "add" }) {
     }
 
     setErrors({});
-    setShowSuccess(true);
+
+    try {
+      setLoading(true);
+      await callApi({
+        url: isEdit ? `/courses/${courseId}/` : "/courses/",
+        method: isEdit ? "put" : "post",
+        data: buildCoursePayload(form),
+        headers: getAuthHeaders(),
+      });
+      toast.success(isEdit ? "Course updated successfully!" : "Course created successfully!");
+      setShowSuccess(true);
+    } catch (error) {
+      const apiErrors = getApiErrors(error.response?.data);
+      if (Object.keys(apiErrors).length > 0) {
+        setErrors(apiErrors);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const fieldClassName = "w-full rounded-lg border border-outline-variant bg-white px-3.5 py-2.5 text-[13px] outline-none focus:border-primary disabled:bg-slate-50 disabled:text-slate-500";
@@ -103,7 +205,7 @@ export default function CourseForm({ mode = "add" }) {
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-[24px] font-extrabold text-primary">{title}</h1>
-          <p className="mt-1 text-[13px] text-on-surface-variant">{subtitle}</p>
+          <p className="mt-1 text-[13px] text-on-surface-variant">{courseLoading ? "Loading course details..." : subtitle}</p>
         </div>
         <Link
           to="/courses"
@@ -140,7 +242,7 @@ export default function CourseForm({ mode = "add" }) {
             >
               <option value="">Select type</option>
               {types.map((item) => (
-                <option key={item} value={item}>{item}</option>
+                <option key={item.value} value={item.value}>{item.label}</option>
               ))}
             </select>
             {errors.type && <p className="mt-1 text-[11px] text-red-600">{errors.type}</p>}
@@ -157,7 +259,7 @@ export default function CourseForm({ mode = "add" }) {
             >
               <option value="">Select status</option>
               {statuses.map((item) => (
-                <option key={item} value={item}>{item}</option>
+                <option key={item.value} value={item.value}>{item.label}</option>
               ))}
             </select>
             {errors.status && <p className="mt-1 text-[11px] text-red-600">{errors.status}</p>}
@@ -259,10 +361,11 @@ export default function CourseForm({ mode = "add" }) {
           {!isView && (
             <button
               type="submit"
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-[13px] font-bold text-on-primary transition-opacity hover:opacity-90"
+              disabled={loading}
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-[13px] font-bold text-on-primary transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
             >
               <Save className="h-4 w-4" />
-              {isEdit ? "Save Changes" : "Save Course"}
+              {loading ? "Saving..." : isEdit ? "Save Changes" : "Save Course"}
             </button>
           )}
         </div>

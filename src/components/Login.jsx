@@ -1,8 +1,19 @@
 import { useState } from "react";
 import { ArrowRight, Lock, Mail } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import campusHero from "../assets/Hero-section.jpg";
 import niteLogo from "../assets/nite-logo.jpg";
+import { callApi } from "../services/ApiService";
+import Cookies from "js-cookie";
+import toast from "react-hot-toast";
+
+const getTokenFromResponse = (response) => (
+  response?.token ||
+  response?.key ||
+  response?.auth_token ||
+  response?.access ||
+  response?.data?.token ||
+  ""
+);
 
 export default function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -28,21 +39,43 @@ export default function Login() {
     return Object.keys(newError).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async(e) => {
+
+    console.log("Submitting form with data:", form);
     e.preventDefault();
     setError({});
     setFormError("");
     if (!validateForm()) return;
-    setLoading(true);
-    // setTimeout(() => {
-    //   const validEmails = ["admin@nawabinstitute.com", "admin@nite.edu.in"];
-    //   if (validEmails.includes(form.email) && form.password === "admin123") {
-    //   } else {
-    //     setFormError("Invalid credentials. Please try again.");
-    //     setLoading(false);
-    //   }
-    // }, 900);
-    navigate("/dashboard");
+    try{
+      setLoading(true);
+        const payload = {
+          email: form.email,
+          password: form.password,
+        }
+      const res = await callApi({
+        url: "/auth/login/",
+        method: "post",
+        data: payload,
+      })
+      console.log("login response", res)
+
+      if(res.statusCode === 200){
+        const token = getTokenFromResponse(res);
+        if (!token) {
+          setFormError("Login succeeded, but no token was returned.");
+          return;
+        }
+
+        toast.success("Login successful!", { id: "loginSuccessToast" });
+        Cookies.set("token", token, { expires: 7, sameSite: "lax" });
+        navigate("/dashboard");
+      }
+    }catch(err){
+      console.log("login error", err)
+    }finally{
+      setLoading(false);
+    }
+    
   };
 
   return (

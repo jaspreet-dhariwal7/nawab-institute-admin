@@ -1,36 +1,89 @@
-import { useMemo, useState } from "react";
-import { Edit, Eye, Plus, Search, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Edit, Eye, Plus, Search } from "lucide-react";
 import { Link } from "react-router-dom";
-import { mockStudents } from "../../lib/data.js";
 import Pagination from "../common/Pagination.jsx";
+import { callApi } from "../../services/ApiService.js";
+
+const getCourseName = (course) => {
+  if (!course) return "";
+  if (typeof course === "object") return course.title || course.name || "";
+  return String(course);
+};
+
+const getStudentList = (data) => {
+  const list = data?.results || [];
+
+  return list.map((student) => ({
+    ...student,
+    name: student.name || "",
+    email: student.email || "",
+    phone: student.phone || "",
+    rollNumber: student.roll_number || student.rollNumber || "",
+    courseName: student.course_title || student.course_name || getCourseName(student.course),
+    status: student.status || "",
+    feesStatus: student.fees_status || student.feesStatus || "",
+  }));
+};
+
+const getStudentTotal = (data) => {
+  const total = Number(data?.count);
+  return Number.isFinite(total) ? total : 0;
+};
 
 export default function StudentManagement() {
   const [search, setSearch] = useState("");
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [students, setStudents] = useState([]);
+  const [totalStudents, setTotalStudents] = useState(0);
+  const [loading, setLoading] = useState(false);
 
-  const filteredStudents = useMemo(() => {
-    const q = search.toLowerCase();
-    return mockStudents.filter((student) => {
-      return (
-        student.name.toLowerCase().includes(q) ||
-        student.rollNumber.toLowerCase().includes(q) ||
-        student.email.toLowerCase().includes(q) ||
-        student.course.toLowerCase().includes(q) ||
-        student.phone.toLowerCase().includes(q)
-      );
-    });
-  }, [search]);
+  useEffect(() => {
+    let isActive = true;
 
-  const pageStudents = filteredStudents.slice((page - 1) * pageSize, page * pageSize);
+    const fetchStudents = async () => {
+      try {
+        setLoading(true);
+        const response = await callApi({
+          url: "/students/",
+          method: "get",
+          params: {
+            page,
+            page_size: pageSize,
+            ...(search.trim() ? { search: search.trim() } : {}),
+          },
+        });
+
+        if (isActive) {
+          setStudents(getStudentList(response));
+          setTotalStudents(getStudentTotal(response));
+        }
+      } catch {
+        if (isActive) {
+          setStudents([]);
+          setTotalStudents(0);
+        }
+      } finally {
+        if (isActive) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchStudents();
+
+    return () => {
+      isActive = false;
+    };
+  }, [page, pageSize, search]);
 
   return (
     <div className="space-y-5">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-[24px] font-extrabold text-primary">Student Management</h1>
-          <p className="mt-1 text-[13px] text-on-surface-variant">{filteredStudents.length} students found</p>
+          <p className="mt-1 text-[13px] text-on-surface-variant">{loading ? "Loading students..." : `${totalStudents} students found`}</p>
         </div>
         <Link
           to="/students/add"
@@ -69,14 +122,14 @@ export default function StudentManagement() {
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant">
-              {pageStudents.map((student) => (
+              {students.map((student) => (
                 <tr key={student.id} className="hover:bg-surface-container/40 text-center">
                   <td className="px-4 py-3">
                     <div className="font-bold text-primary">{student.name}</div>
                     <div className="text-[12px] text-on-surface-variant">{student.email}</div>
                   </td>
                   <td className="px-4 py-3 text-[13px] font-semibold text-primary">{student.rollNumber}</td>
-                  <td className="px-4 py-3 text-[13px] text-on-surface-variant">{student.course}</td>
+                  <td className="px-4 py-3 text-[13px] text-on-surface-variant">{student.courseName}</td>
                   <td className="px-4 py-3 text-[13px] text-on-surface-variant">{student.phone}</td>
                   <td className="px-4 py-3 ">
                     <div className="flex justify-center gap-1">
@@ -107,7 +160,7 @@ export default function StudentManagement() {
         <Pagination
           page={page}
           pageSize={pageSize}
-          totalItems={filteredStudents.length}
+          totalItems={totalStudents}
           onPageChange={setPage}
           onPageSizeChange={setPageSize}
         />
@@ -128,7 +181,7 @@ export default function StudentManagement() {
             <div className="space-y-3">
               {[
                 { label: "Roll Number", value: selectedStudent.rollNumber },
-                { label: "Course", value: selectedStudent.course },
+                { label: "Course", value: selectedStudent.courseName },
                 { label: "Status", value: selectedStudent.status },
                 { label: "Fees Status", value: selectedStudent.feesStatus },
               ].map((item) => (

@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Save } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { mockStudents } from "../../lib/data.js";
+import { callApi } from "../../services/ApiService.js";
+import toast from "react-hot-toast";
 
 const initialForm = {
   name: "",
@@ -15,81 +16,223 @@ const initialForm = {
   highestQualification: null,
   idProof: null,
   profilePhoto: null,
+  profilePhotoUrl: "",
+  idProofUrl: "",
+  highestQualificationUrl: "",
   address: "",
 };
 
 const courses = [
-  "Diploma in Computer Application",
-  "Advance Diploma in Computer Application",
-  "Diploma in Business Management",
-  "Diploma in Business Administration",
-  "Diploma in Hardware & Networking",
-  "Diploma in Digital Marketing",
-  "Basic Computer Course",
-  "Advance Basic",
-  "Tally ERP Course",
-  "CorelDraw Course",
-  "Adobe Photoshop Course",
-  "HTML & Web Designing",
-  "Visual Basic",
-  "Computer Typing",
-  "Internet & Email"
+  { id: 1, name: "Diploma in Computer Application" },
+  { id: 2, name: "Advance Diploma in Computer Application" },
+  { id: 3, name: "Diploma in Business Management" },
+  { id: 4, name: "Diploma in Business Administration" },
+  { id: 5, name: "Diploma in Hardware & Networking" },
+  { id: 6, name: "Diploma in Digital Marketing" },
+  { id: 7, name: "Basic Computer Course" },
+  { id: 8, name: "Advance Basic" },
+  { id: 9, name: "Tally ERP Course" },
+  { id: 10, name: "CorelDraw Course" },
+  { id: 11, name: "Adobe Photoshop Course" },
+  { id: 12, name: "HTML & Web Designing" },
+  { id: 13, name: "Visual Basic" },
+  { id: 14, name: "Computer Typing" },
+  { id: 15, name: "Internet & Email" },
 ];
+
+const useObjectUrl = (file) => {
+  const url = useMemo(() => {
+    if (!file) return "";
+    return URL.createObjectURL(file);
+  }, [file]);
+
+  useEffect(() => {
+    return () => {
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, [url]);
+
+  return url;
+};
+
+const getCourseValue = (course) => {
+  if (!course) return "";
+  if (typeof course === "object") return course.id ? String(course.id) : "";
+  const matchedCourse = courses.find((item) => item.name === course || String(item.id) === String(course));
+  return matchedCourse ? String(matchedCourse.id) : String(course);
+};
+
+const generateRollNumber = (sequence) => {
+  const year = new Date().getFullYear();
+  const randomPart = String(Math.floor(Math.random() * 10000)).padStart(4, "0");
+  const sequencePart = String(sequence).padStart(3, "0");
+
+  return `${year}-${randomPart}-${sequencePart}`;
+};
+
+const getStudentCount = (data) => {
+  const list = Array.isArray(data) ? data : data?.results || [];
+  return data?.count ?? list.length;
+};
+
+const getNextRollNumber = async () => {
+  const response = await callApi({
+    url: "/students/",
+    method: "get",
+    params: {
+      page_size: 1,
+    },
+  });
+
+  return generateRollNumber(getStudentCount(response) + 1);
+};
+
+const appendPayloadField = (payload, key, value, { skipEmptyFile = false } = {}) => {
+  if (skipEmptyFile && !value) return;
+
+  if (value instanceof File) {
+    payload.append(key, value);
+    return;
+  }
+
+  payload.append(key, value ?? "");
+};
+
+const buildStudentPayload = (form, isEdit) => {
+  const payload = new FormData();
+  const skipEmptyFile = Boolean(isEdit);
+
+  appendPayloadField(payload, "photo", form.profilePhoto, { skipEmptyFile });
+  appendPayloadField(payload, "name", form.name.trim());
+  appendPayloadField(payload, "roll_number", form.rollNumber.trim());
+  appendPayloadField(payload, "email", form.email.trim());
+  appendPayloadField(payload, "phone", form.phone.trim());
+  appendPayloadField(payload, "course", Number(form.course));
+  appendPayloadField(payload, "admission_date", form.admissionDate);
+  appendPayloadField(payload, "guardian_name", form.guardianName.trim());
+  appendPayloadField(payload, "guardian_phone", form.guardianPhone.trim());
+  appendPayloadField(payload, "id_proof", form.idProof, { skipEmptyFile });
+  appendPayloadField(payload, "highest_qualification", form.highestQualification, { skipEmptyFile });
+  appendPayloadField(payload, "address", form.address.trim());
+
+  return payload;
+};
+
+const fieldMap = {
+  photo: "profilePhoto",
+  roll_number: "rollNumber",
+  admission_date: "admissionDate",
+  guardian_name: "guardianName",
+  guardian_phone: "guardianPhone",
+  id_proof: "idProof",
+  highest_qualification: "highestQualification",
+};
+
+const getApiErrors = (data) => {
+  if (!data || typeof data !== "object" || Array.isArray(data)) return {};
+
+  return Object.entries(data).reduce((nextErrors, [key, value]) => {
+    const field = fieldMap[key] || key;
+    nextErrors[field] = Array.isArray(value) ? value.join(" ") : String(value);
+    return nextErrors;
+  }, {});
+};
+
+const getDateValue = (value) => {
+  if (!value) return "";
+  return String(value).slice(0, 10);
+};
+
+const getStudentForm = (student) => ({
+  ...initialForm,
+  name: student.name || "",
+  rollNumber: student.roll_number || student.rollNumber || "",
+  email: student.email || "",
+  phone: student.phone || "",
+  course: getCourseValue(student.course),
+  admissionDate: getDateValue(student.admission_date || student.admissionDate),
+  guardianName: student.guardian_name || student.guardianName || "",
+  guardianPhone: student.guardian_phone || student.guardianPhone || "",
+  profilePhotoUrl: student.photo || student.profile_photo || student.profilePhoto || "",
+  idProofUrl: student.id_proof || student.idProof || "",
+  highestQualificationUrl: student.highest_qualification || student.highestQualification || "",
+  address: student.address || "",
+});
 
 export default function AddStudent() {
   const { studentId } = useParams();
   const navigate = useNavigate();
-  const student = mockStudents.find((item) => item.id === studentId);
   const isEdit = Boolean(studentId);
-  const [form, setForm] = useState(() => student ? {
-    ...initialForm,
-    name: student.name,
-    rollNumber: student.rollNumber,
-    email: student.email,
-    phone: student.phone,
-    course: student.course,
-  } : initialForm);
-  const [profilePreview, setProfilePreview] = useState(student?.image || "");
-  const [idProofPreview, setIdProofPreview] = useState("");
-  const [qualificationPreview, setQualificationPreview] = useState("");
+  const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState({});
   const [showSuccess, setShowSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [studentLoading, setStudentLoading] = useState(false);
+  const [rollNumberLoading, setRollNumberLoading] = useState(false);
+  const profilePreview = useObjectUrl(form.profilePhoto) || form.profilePhotoUrl;
+  const idProofPreview = useObjectUrl(form.idProof);
+  const qualificationPreview = useObjectUrl(form.highestQualification);
 
-useEffect(() => {
-  let profileUrl;
-  let idUrl;
-  let qualificationUrl;
+  useEffect(() => {
+    if (!isEdit) {
+      let isActive = true;
 
-  // Profile photo preview
-  if (form.profilePhoto) {
-    profileUrl = URL.createObjectURL(form.profilePhoto);
-    setProfilePreview(profileUrl);
-  } else {
-    setProfilePreview(student?.image || "");
-  }
+      const fetchRollNumber = async () => {
+        try {
+          setRollNumberLoading(true);
+          const rollNumber = await getNextRollNumber();
 
-  // Highest qualification preview
-  if (form.highestQualification) {
-    qualificationUrl = URL.createObjectURL(form.highestQualification);
-    setQualificationPreview(qualificationUrl);
-  } else {
-    setQualificationPreview("");
-  }
+          if (isActive) {
+            setForm((current) => ({ ...current, rollNumber }));
+          }
+        } catch {
+          if (isActive) {
+            toast.error("Unable to generate roll number.");
+          }
+        } finally {
+          if (isActive) {
+            setRollNumberLoading(false);
+          }
+        }
+      };
 
-  // ID proof preview
-  if (form.idProof) {
-    idUrl = URL.createObjectURL(form.idProof);
-    setIdProofPreview(idUrl);
-  } else {
-    setIdProofPreview("");
-  }
+      fetchRollNumber();
 
-  return () => {
-    if (profileUrl) URL.revokeObjectURL(profileUrl);
-    if (qualificationUrl) URL.revokeObjectURL(qualificationUrl);
-    if (idUrl) URL.revokeObjectURL(idUrl);
-  };
-}, [form.profilePhoto, form.highestQualification, form.idProof, student]);
+      return () => {
+        isActive = false;
+      };
+    }
+
+    let isActive = true;
+
+    const fetchStudent = async () => {
+      try {
+        setStudentLoading(true);
+        const response = await callApi({
+          url: `/students/${studentId}/`,
+          method: "get",
+        });
+
+        if (isActive) {
+          setForm(getStudentForm(response));
+        }
+      } catch {
+        if (isActive) {
+          toast.error("Unable to load student details.");
+        }
+      } finally {
+        if (isActive) {
+          setStudentLoading(false);
+        }
+      }
+    };
+
+    fetchStudent();
+
+    return () => {
+      isActive = false;
+    };
+  }, [isEdit, studentId]);
 
   const updateField = (field, value) => {
     setForm((current) => ({ ...current, [field]: value }));
@@ -109,15 +252,15 @@ useEffect(() => {
     else if (!phonePattern.test(form.phone)) nextErrors.phone = "Enter a valid phone number.";
     if (!form.course) nextErrors.course = "Please select a course.";
     if (!form.admissionDate) nextErrors.admissionDate = "Admission date is required.";
-    if (!form.highestQualification) nextErrors.highestQualification = "Upload highest qualification.";
-    if (!form.idProof) nextErrors.idProof = "Upload a valid ID proof.";
+    if (!form.highestQualification && !form.highestQualificationUrl) nextErrors.highestQualification = "Upload highest qualification.";
+    if (!form.idProof && !form.idProofUrl) nextErrors.idProof = "Upload a valid ID proof.";
     if (!form.address.trim()) nextErrors.address = "Address is required.";
     if (form.guardianPhone && !phonePattern.test(form.guardianPhone)) nextErrors.guardianPhone = "Enter a valid guardian phone number.";
 
     return nextErrors;
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     const nextErrors = validateForm();
 
@@ -127,14 +270,45 @@ useEffect(() => {
     }
 
     setErrors({});
-    setShowSuccess(true);
+
+    try {
+      setLoading(true);
+      await callApi({
+        url: isEdit ? `/students/${studentId}/` : "/students/",
+        method: isEdit ? "put" : "post",
+        data: buildStudentPayload(form, isEdit),
+      });
+      toast.success(isEdit ? "Student updated successfully!" : "Student added successfully!");
+      setShowSuccess(true);
+    } catch (error) {
+      const apiErrors = getApiErrors(error.response?.data);
+      if (Object.keys(apiErrors).length > 0) {
+        setErrors(apiErrors);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSuccessClose = () => {
     setShowSuccess(false);
     if (!isEdit) {
       setForm(initialForm);
-      setProfilePreview("");
+      setErrors({});
+
+      const refreshRollNumber = async () => {
+        try {
+          setRollNumberLoading(true);
+          const rollNumber = await getNextRollNumber();
+          setForm((current) => ({ ...current, rollNumber }));
+        } catch {
+          toast.error("Unable to generate roll number.");
+        } finally {
+          setRollNumberLoading(false);
+        }
+      };
+
+      refreshRollNumber();
     }
   };
 
@@ -144,7 +318,7 @@ useEffect(() => {
         <div>
           <h1 className="text-[24px] font-extrabold text-primary">{isEdit ? "Edit Student" : "Add Student"}</h1>
           <p className="mt-1 text-[13px] text-on-surface-variant">
-            {isEdit ? "Update student profile and enrollment details." : "Create a new student profile and enrollment record."}
+            {studentLoading ? "Loading student details..." : isEdit ? "Update student profile and enrollment details." : "Create a new student profile and enrollment record."}
           </p>
         </div>
         <Link
@@ -195,9 +369,9 @@ useEffect(() => {
             <input
               required
               value={form.rollNumber}
-              onChange={(event) => updateField("rollNumber", event.target.value)}
-              placeholder="#NITE-2026-001"
-              className={`w-full rounded-lg border px-3.5 py-2.5 text-[13px] outline-none focus:border-primary ${errors.rollNumber ? "border-red-500 focus:border-red-500" : "border-outline-variant"}`}
+              readOnly
+              placeholder={rollNumberLoading ? "Generating roll number..." : "2026-4821-001"}
+              className={`w-full rounded-lg border bg-slate-50 px-3.5 py-2.5 text-[13px] font-semibold text-slate-600 outline-none ${errors.rollNumber ? "border-red-500" : "border-outline-variant"}`}
             />
             {errors.rollNumber && <p className="mt-1 text-[11px] text-red-600">{errors.rollNumber}</p>}
           </div>
@@ -237,8 +411,8 @@ useEffect(() => {
             >
               <option value="">Select course</option>
               {courses.map((course) => (
-                <option key={course} value={course}>
-                  {course}
+                <option key={course.id} value={course.id}>
+                  {course.name}
                 </option>
               ))}
             </select>
@@ -347,10 +521,11 @@ useEffect(() => {
           </Link>
           <button
             type="submit"
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-[13px] font-bold text-on-primary transition-opacity hover:opacity-90"
+            disabled={loading || studentLoading || rollNumberLoading}
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-[13px] font-bold text-on-primary transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
           >
             <Save className="h-4 w-4" />
-            {isEdit ? "Save Changes" : "Save Student"}
+            {loading ? "Saving..." : studentLoading || rollNumberLoading ? "Loading..." : isEdit ? "Save Changes" : "Save Student"}
           </button>
         </div>
       </form>

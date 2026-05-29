@@ -5,8 +5,6 @@ export default function Pagination({
   pageSize,
   totalItems,
   onPageChange,
-  onPageSizeChange,
-  pageSizeOptions = [10, 25, 50],
 }) {
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const start = totalItems === 0 ? 0 : (page - 1) * pageSize + 1;

@@ -1,19 +1,31 @@
 import axios from "axios";
 import Cookies from "js-cookie";
 import toast from "react-hot-toast";
-import { API_BASE_URL } from "../config/index.js";
 
 const getBaseUrl = () => {
 	if (typeof window === "undefined") {
-		return API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "";
+		return  import.meta.env.VITE_API_BASE_URL || "";
 	}
-	return API_BASE_URL ||process.env.NEXT_PUBLIC_API_BASE_URL || "";
+	return import.meta.env.VITE_API_BASE_URL || "";
 };
 
 const apiClient = axios.create({
 	baseURL: getBaseUrl(),
 	timeout: 30000,
 });
+
+const getAuthorizationHeader = (token) => {
+	const normalizedToken = token?.trim();
+	if (!normalizedToken) return "";
+	if (/^(Token|Bearer)\s+/i.test(normalizedToken)) return normalizedToken;
+	return `Token ${normalizedToken}`;
+};
+
+export const getAuthHeaders = () => {
+	const token = Cookies.get("token");
+	const authorizationHeader = getAuthorizationHeader(token);
+	return authorizationHeader ? { Authorization: authorizationHeader } : {};
+};
 
 // Request interceptor: Add token if available, unless in excluded routes
 apiClient.interceptors.request.use(
@@ -22,9 +34,9 @@ apiClient.interceptors.request.use(
 			config.headers["Content-Type"] = "application/json";
 		}
 		if (typeof window !== "undefined") {
-			const token = Cookies.get("token");
-			if (token) {
-				config.headers.Authorization = `Bearer ${token}`;
+			const authHeaders = getAuthHeaders();
+			if (authHeaders.Authorization) {
+				config.headers.Authorization = authHeaders.Authorization;
 
 			}
 		}
@@ -59,6 +71,7 @@ apiClient.interceptors.response.use(
 		const message =
 			error.response?.data?.message ||
 			error.response?.data?.error ||
+			error.response?.data?.detail ||
 			error.message ||
 			"Something went wrong!";
 		if (axios.isAxiosError(error)) {
@@ -95,26 +108,22 @@ export const callApi = async ({
   headers = {},
   responseType,
 }) => {
-	try {
-		const isFormData =
-			typeof FormData !== "undefined" && data instanceof FormData;
+	const isFormData =
+		typeof FormData !== "undefined" && data instanceof FormData;
 
-		const response = await apiClient({
-			method,
-			url,
-			data,
-			params,
-			responseType,
-			headers: {
-				...headers,
-				...(isFormData ? {} : {}),
-			},
-		});
+	const response = await apiClient({
+		method,
+		url,
+		data,
+		params,
+		responseType,
+		headers: {
+			...headers,
+			...(isFormData ? {} : {}),
+		},
+	});
 
-		return response;
-	} catch (error) {
-		throw error;
-	}
+	return response;
 };
 
 export default apiClient;

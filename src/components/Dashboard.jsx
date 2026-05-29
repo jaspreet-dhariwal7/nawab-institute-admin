@@ -1,41 +1,76 @@
 import { BookOpen, BriefcaseBusiness, CircleHelp, GraduationCap } from 'lucide-react';
+import { callApi } from '../services/ApiService';
+import { useEffect, useState } from 'react';
 
-const overviewCards = [
-  {
-    label: 'Total Enrolled Students',
-    value: '272',
-    icon: GraduationCap,
-    accent: '#ffb21d',
-    stripe: 'bg-[#ffb21d]',
-    iconWrap: 'bg-[#fff6e4]',
-  },
-  {
-    label: 'Total Active Employees',
-    value: '15',
-    icon: BriefcaseBusiness,
-    accent: '#071f4d',
-    stripe: 'bg-[#071f4d]',
-    iconWrap: 'bg-[#e8eaf2]',
-  },
-  {
-    label: 'Academic Courses',
-    value: '24',
-    icon: BookOpen,
-    accent: '#ffb21d',
-    stripe: 'bg-[#ffb21d]',
-    iconWrap: 'bg-[#fff6e4]',
-  },
-  {
-    label: 'Enquiries',
-    value: '128',
-    icon: CircleHelp,
-    accent: '#071f4d',
-    stripe: 'bg-[#071f4d]',
-    iconWrap: 'bg-[#e8eaf2]',
-  },
-];
+
 
 export default function Dashboard() {
+  const [dashStatus, setDashStatus] = useState({
+    totalStudents: 0,
+    activeEmployees: 0,
+    coursesOffered: 0,
+    totalEnquiries: 0,
+  });
+  const overviewCards = [
+    {
+      label: 'Total Enrolled Students',
+      value: dashStatus.totalStudents,
+      icon: GraduationCap,
+      accent: '#ffb21d',
+      stripe: 'bg-[#ffb21d]',
+      iconWrap: 'bg-[#fff6e4]',
+    },
+    {
+      label: 'Total Active Employees',
+      value: dashStatus.activeEmployees,
+      icon: BriefcaseBusiness,
+      accent: '#071f4d',
+      stripe: 'bg-[#071f4d]',
+      iconWrap: 'bg-[#e8eaf2]',
+    },
+    {
+      label: 'Academic Courses',
+      value: dashStatus.coursesOffered,
+      icon: BookOpen,
+      accent: '#ffb21d',
+      stripe: 'bg-[#ffb21d]',
+      iconWrap: 'bg-[#fff6e4]',
+    },
+    {
+      label: 'Enquiries',
+      value: dashStatus.totalEnquiries,
+      icon: CircleHelp,
+      accent: '#071f4d',
+      stripe: 'bg-[#071f4d]',
+      iconWrap: 'bg-[#e8eaf2]',
+    },
+  ];
+
+  useEffect(()=>{
+    fetchDashboardStatus();
+  },[])
+  const fetchDashboardStatus = async () => {
+    try {
+      const response = await callApi({
+        url: "/dashboard/stats/",
+        method: "get",
+      });
+
+      setDashStatus({
+        totalStudents: response?.students?.total ?? 0,
+        activeEmployees: response?.employees?.total ?? 0,
+        coursesOffered: response?.courses?.total ?? 0,
+        totalEnquiries: response?.enquiries?.total ?? 0,
+      });
+    } catch {
+      setDashStatus({
+        totalStudents: 0,
+        activeEmployees: 0,
+        coursesOffered: 0,
+        totalEnquiries: 0,
+      });
+    }
+  }
   return (
     <section>
       <div className="mb-7">
