@@ -22,12 +22,69 @@ const getStudentList = (data) => {
     courseName: student.course_title || student.course_name || getCourseName(student.course),
     status: student.status || "",
     feesStatus: student.fees_status || student.feesStatus || "",
+    avatarUrl: student.photo || student.profile_photo || student.profilePhoto || student.avatar || "",
   }));
 };
 
 const getStudentTotal = (data) => {
   const total = Number(data?.count);
   return Number.isFinite(total) ? total : 0;
+};
+
+const getStudentInitials = (name) => {
+  const initials = String(name || "")
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
+
+  return initials || "S";
+};
+
+const renderStudentRow = (student, setSelectedStudent) => {
+  const initials = getStudentInitials(student.name);
+
+  return (
+    <tr key={student.id} className="hover:bg-surface-container/40 text-start">
+      <td className="px-4 py-3">
+        <div className="flex max-w-[220px] items-start justify-start gap-3">
+          <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-slate-100 text-[12px] font-bold uppercase text-slate-700">
+            {student.avatarUrl ? (
+              <img src={student.avatarUrl} alt={student.name} className="h-full w-full object-cover" />
+            ) : (
+              initials
+            )}
+          </div>
+          <div className="text-left">
+            <div className="font-bold text-primary">{student.name}</div>
+            <div className="text-[12px] text-on-surface-variant">{student.email}</div>
+          </div>
+        </div>
+      </td>
+      <td className="px-4 py-3 text-[13px] font-semibold text-primary">{student.rollNumber}</td>
+      <td className="px-4 py-3 text-[13px] text-on-surface-variant">{student.courseName}</td>
+      <td className="px-4 py-3 text-[13px] text-on-surface-variant">{student.phone}</td>
+      <td className="px-4 py-3">
+        <div className="flex justify-start gap-1">
+          <button
+            onClick={() => setSelectedStudent(student)}
+            className="grid h-8 w-8 place-items-center rounded-lg text-on-surface-variant hover:bg-surface-container"
+            aria-label="View student"
+          >
+            <Eye className="h-4 w-4" />
+          </button>
+          <Link
+            to={`/students/edit/${student.id}`}
+            className="grid h-8 w-8 place-items-center rounded-lg text-on-surface-variant hover:bg-surface-container"
+            aria-label="Edit student"
+          >
+            <Edit className="h-4 w-4" />
+          </Link>
+        </div>
+      </td>
+    </tr>
+  );
 };
 
 export default function StudentManagement() {
@@ -111,49 +168,18 @@ export default function StudentManagement() {
 
       <div className="overflow-hidden rounded-xl border border-outline-variant bg-white shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[760px] text-left">
+          <table className="w-full min-w-[760px]">
             <thead className="bg-surface-container-low">
               <tr className="border-b border-outline-variant">
                 {["Student", "Roll Number", "Course", "Phone", "Actions"].map((heading) => (
-                  <th key={heading} className="px-4 py-3 text-[11px] font-extrabold uppercase text-center tracking-wider text-on-surface-variant">
+                  <th key={heading} className="px-4 py-3 text-[11px] font-extrabold uppercase text-left tracking-wider text-on-surface-variant">
                     {heading}
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant">
-              {students.map((student) => (
-                <tr key={student.id} className="hover:bg-surface-container/40 text-center">
-                  <td className="px-4 py-3">
-                    <div className="font-bold text-primary">{student.name}</div>
-                    <div className="text-[12px] text-on-surface-variant">{student.email}</div>
-                  </td>
-                  <td className="px-4 py-3 text-[13px] font-semibold text-primary">{student.rollNumber}</td>
-                  <td className="px-4 py-3 text-[13px] text-on-surface-variant">{student.courseName}</td>
-                  <td className="px-4 py-3 text-[13px] text-on-surface-variant">{student.phone}</td>
-                  <td className="px-4 py-3 ">
-                    <div className="flex justify-center gap-1">
-                      <button
-                        onClick={() => setSelectedStudent(student)}
-                        className="grid h-8 w-8 place-items-center rounded-lg text-on-surface-variant hover:bg-surface-container"
-                        aria-label="View student"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </button>
-                      <Link
-                        to={`/students/edit/${student.id}`}
-                        className="grid h-8 w-8 place-items-center rounded-lg text-on-surface-variant hover:bg-surface-container"
-                        aria-label="Edit student"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Link>
-                      {/* <button className="grid h-8 w-8 place-items-center rounded-lg text-red-500 hover:bg-red-50" aria-label="Delete student">
-                        <Trash2 className="h-4 w-4" />
-                      </button> */}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {students.map((student) => renderStudentRow(student, setSelectedStudent))}
             </tbody>
           </table>
         </div>

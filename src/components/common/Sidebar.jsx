@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { BookOpen, BriefcaseBusiness, CircleHelp, GraduationCap, LayoutDashboard, LogOut } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { cn } from '../../lib/utlis.js';
+import niteLogo from '../../assets/nite_logo.png';
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
@@ -31,13 +32,14 @@ export default function Sidebar({ isOpen, onClose }) {
         isOpen ? "flex" : "hidden"
       )}>
         <div className="px-6 py-5">
-          <div className="mb-9">
-            <h1 className="brand-heading text-[#ffb21d]">
-              NITE
-            </h1>
-            <p className="mt-2 text-[13px] font-black uppercase tracking-[0.18em] text-[#6f7899]">
-              Admin Portal
-            </p>
+          <div className="mb-5">
+            <div className="flex items-center gap-3 rounded-2xl bg-white/5 px-3 py-3 shadow-sm shadow-black/10">
+              <img src={niteLogo} alt="NITE Logo" className="h-10 w-auto" />
+              <div>
+                <p className="text-sm font-extrabold uppercase tracking-[0.24em] text-white">NITE</p>
+                <p className="mt-1 text-[12px] uppercase tracking-[0.2em] text-[#a5b0d8]">Admin Portal</p>
+              </div>
+            </div>
           </div>
 
           <nav className="space-y-2">
