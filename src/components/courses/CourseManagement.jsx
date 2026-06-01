@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import Pagination from "../common/Pagination.jsx";
 import { callApi } from "../../services/ApiService.js";
+import Loader from "../common/Loader.jsx";
 
 const getCourseList = (data) => {
   const list = Array.isArray(data) ? data : data?.results || [];
@@ -47,7 +48,7 @@ export default function CourseManagement() {
           method: "get",
           params: {
             page,
-            page_size: pageSize,
+            // page_size: pageSize,
             ...(search.trim() ? { search: search.trim() } : {}),
           },
         });
@@ -109,7 +110,9 @@ export default function CourseManagement() {
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-[24px] font-extrabold text-primary">Course Catalog</h1>
-          <p className="mt-1 text-[13px] text-on-surface-variant">{loading ? "Loading courses..." : `${totalCourses} courses found`}</p>
+          <div className="mt-1 text-[13px] text-on-surface-variant">
+            {loading ? <Loader label="Loading courses..." /> : `${totalCourses} courses found`}
+          </div>
         </div>
         <Link
           to="/courses/add"
@@ -184,6 +187,13 @@ export default function CourseManagement() {
                   </td>
                 </tr>
               ))}
+              {loading && (
+                <tr>
+                  <td colSpan={4}>
+                    <Loader variant="block" label="Loading courses..." />
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -225,7 +235,7 @@ export default function CourseManagement() {
                 disabled={deleting}
                 className="rounded-lg bg-red-600 px-4 py-2.5 text-[13px] font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {deleting ? "Deleting..." : "Delete"}
+                {deleting ? <Loader variant="button" label="Deleting..." /> : "Delete"}
               </button>
             </div>
           </div>

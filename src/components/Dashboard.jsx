@@ -1,6 +1,7 @@
 import { BookOpen, BriefcaseBusiness, CircleHelp, GraduationCap } from 'lucide-react';
 import { callApi } from '../services/ApiService';
 import { useEffect, useState } from 'react';
+import Loader from './common/Loader.jsx';
 
 
 
@@ -11,6 +12,7 @@ export default function Dashboard() {
     coursesOffered: 0,
     totalEnquiries: 0,
   });
+  const [loading, setLoading] = useState(false);
   const overviewCards = [
     {
       label: 'Total Enrolled Students',
@@ -46,11 +48,9 @@ export default function Dashboard() {
     },
   ];
 
-  useEffect(()=>{
-    fetchDashboardStatus();
-  },[])
   const fetchDashboardStatus = async () => {
     try {
+      setLoading(true);
       const response = await callApi({
         url: "/dashboard/stats/",
         method: "get",
@@ -69,17 +69,24 @@ export default function Dashboard() {
         coursesOffered: 0,
         totalEnquiries: 0,
       });
+    } finally {
+      setLoading(false);
     }
   }
+
+  useEffect(()=>{
+    fetchDashboardStatus();
+  },[])
+
   return (
     <section>
       <div className="mb-7">
         <h1 className="text-[28px] font-black leading-tight text-[#07112f]">
           Institutional Overview
         </h1>
-        <p className="mt-1 text-[14px] text-[#71717b]">
-          Real-time statistics and management summary for Nawab Institute of Technical Education.
-        </p>
+        <div className="mt-1 text-[14px] text-[#71717b]">
+          {loading ? <Loader label="Loading dashboard stats..." /> : "Real-time statistics and management summary for Nawab Institute of Technical Education."}
+        </div>
       </div>
 
       <div className="grid max-w-[760px] grid-cols-1 gap-4 lg:grid-cols-2">

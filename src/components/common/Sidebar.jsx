@@ -34,7 +34,7 @@ export default function Sidebar({ isOpen, onClose }) {
         <div className="px-6 py-5">
           <div className="mb-5">
             <div className="flex items-center gap-3 rounded-2xl bg-white/5 px-3 py-3 shadow-sm shadow-black/10">
-              <img src={niteLogo} alt="NITE Logo" className="h-10 w-auto" />
+              <img src={niteLogo} alt="NITE Logo" className="h-10 w-auto rounded-lg" />
               <div>
                 <p className="text-sm font-extrabold uppercase tracking-[0.24em] text-white">NITE</p>
                 <p className="mt-1 text-[12px] uppercase tracking-[0.2em] text-[#a5b0d8]">Admin Portal</p>

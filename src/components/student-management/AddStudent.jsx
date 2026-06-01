@@ -3,6 +3,7 @@ import { ArrowLeft, Save } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { callApi } from "../../services/ApiService.js";
 import toast from "react-hot-toast";
+import Loader from "../common/Loader.jsx";
 
 const initialForm = {
   name: "",
@@ -143,6 +144,29 @@ const getDateValue = (value) => {
   return String(value).slice(0, 10);
 };
 
+const isImageSource = (source) => {
+  if (!source) return false;
+  if (source instanceof File) return source.type.startsWith("image/");
+
+  try {
+    const pathname = new URL(source, window.location.origin).pathname;
+    return /\.(apng|avif|gif|jpe?g|png|webp)$/i.test(pathname);
+  } catch {
+    return /\.(apng|avif|gif|jpe?g|png|webp)(?:$|[?#])/i.test(String(source));
+  }
+};
+
+const getFileNameFromUrl = (url) => {
+  if (!url) return "";
+
+  try {
+    const pathname = new URL(url, window.location.origin).pathname;
+    return decodeURIComponent(pathname.split("/").filter(Boolean).pop() || "");
+  } catch {
+    return String(url).split(/[/?#]/).filter(Boolean).pop() || "";
+  }
+};
+
 const getStudentForm = (student) => ({
   ...initialForm,
   name: student.name || "",
@@ -170,8 +194,8 @@ export default function AddStudent() {
   const [studentLoading, setStudentLoading] = useState(false);
   const [rollNumberLoading, setRollNumberLoading] = useState(false);
   const profilePreview = useObjectUrl(form.profilePhoto) || form.profilePhotoUrl;
-  const idProofPreview = useObjectUrl(form.idProof);
-  const qualificationPreview = useObjectUrl(form.highestQualification);
+  const idProofPreview = useObjectUrl(form.idProof) || form.idProofUrl;
+  const qualificationPreview = useObjectUrl(form.highestQualification) || form.highestQualificationUrl;
 
   useEffect(() => {
     if (!isEdit) {
@@ -317,9 +341,9 @@ export default function AddStudent() {
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-[24px] font-extrabold text-primary">{isEdit ? "Edit Student" : "Add Student"}</h1>
-          <p className="mt-1 text-[13px] text-on-surface-variant">
-            {studentLoading ? "Loading student details..." : isEdit ? "Update student profile and enrollment details." : "Create a new student profile and enrollment record."}
-          </p>
+          <div className="mt-1 text-[13px] text-on-surface-variant">
+            {studentLoading ? <Loader label="Loading student details..." /> : isEdit ? "Update student profile and enrollment details." : "Create a new student profile and enrollment record."}
+          </div>
         </div>
         <Link
           to="/students"
@@ -456,10 +480,10 @@ export default function AddStudent() {
             <label className="mb-1.5 block text-[12px] font-bold text-on-surface-variant">ID Proof</label>
             <div className="mb-3 grid h-28 w-28 place-items-center overflow-hidden rounded-xl border border-outline-variant bg-slate-50 ">
               {idProofPreview ? (
-                form.idProof?.type?.startsWith("image/") ? (
+                isImageSource(form.idProof || form.idProofUrl) ? (
                   <img src={idProofPreview} alt="ID preview" className="h-full w-full object-cover" />
                 ) : (
-                  <span className="text-[11px] font-bold uppercase tracking-wide text-slate-400 text-center">{form.idProof?.name || "Document"}</span>
+                  <span className="px-2 text-center text-[11px] font-bold uppercase tracking-wide text-slate-400">{form.idProof?.name || getFileNameFromUrl(form.idProofUrl) || "Document"}</span>
                 )
               ) : (
                 <span className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Upload file</span>
@@ -480,10 +504,10 @@ export default function AddStudent() {
             <label className="mb-1.5 block text-[12px] font-bold text-on-surface-variant">Highest Qualification</label>
             <div className="mb-3 grid h-28 w-28 place-items-center overflow-hidden rounded-xl border border-outline-variant bg-slate-50 ">
               {qualificationPreview ? (
-                form.highestQualification?.type?.startsWith("image/") ? (
+                isImageSource(form.highestQualification || form.highestQualificationUrl) ? (
                   <img src={qualificationPreview} alt="Qualification preview" className="h-full w-full object-cover" />
                 ) : (
-                  <span className="text-[11px] font-bold uppercase tracking-wide text-slate-400 text-center">{form.highestQualification?.name || "Document"}</span>
+                  <span className="px-2 text-center text-[11px] font-bold uppercase tracking-wide text-slate-400">{form.highestQualification?.name || getFileNameFromUrl(form.highestQualificationUrl) || "Document"}</span>
                 )
               ) : (
                 <span className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Upload file</span>
@@ -525,7 +549,7 @@ export default function AddStudent() {
             className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-[13px] font-bold text-on-primary transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
           >
             <Save className="h-4 w-4" />
-            {loading ? "Saving..." : studentLoading || rollNumberLoading ? "Loading..." : isEdit ? "Save Changes" : "Save Student"}
+            {loading ? <Loader variant="button" label="Saving..." /> : studentLoading || rollNumberLoading ? <Loader variant="button" label="Loading..." /> : isEdit ? "Save Changes" : "Save Student"}
           </button>
         </div>
       </form>

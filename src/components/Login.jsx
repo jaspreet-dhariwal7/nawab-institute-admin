@@ -5,6 +5,7 @@ import niteLogo from "../assets/nite-logo.jpg";
 import { callApi } from "../services/ApiService";
 import Cookies from "js-cookie";
 import toast from "react-hot-toast";
+import Loader from "./common/Loader.jsx";
 
 const getTokenFromResponse = (response) => (
   response?.token ||
@@ -174,13 +175,7 @@ export default function Login() {
               className="mt-1 flex h-[53px] w-full items-center justify-center gap-3 rounded-[6px] bg-[#ffb21d] text-[14px] font-semibold text-[#332000] transition hover:bg-[#f5a600] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
             >
               {loading ? (
-                <>
-                  <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                  </svg>
-                  Logging in...
-                </>
+                <Loader variant="button" label="Logging in..." />
               ) : (
                 <>
                   Login

@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Edit, Eye, Plus, Search, Trash2 } from "lucide-react";
+import { AlertTriangle, Download, Edit, Eye, Plus, Search, Trash2, X } from "lucide-react";
 import toast from "react-hot-toast";
 import { cn } from "../../lib/utlis.js";
 import { callApi } from "../../services/ApiService.js";
 import Pagination from "../common/Pagination.jsx";
+import instituteLogo from "../../assets/nite_logo.png";
+import Loader from "../common/Loader.jsx";
 
 const ROLE_OPTIONS = [
   { label: "Teacher", value: "teacher" },
@@ -21,19 +23,23 @@ const STATUS_OPTIONS = [
 
 const EMPTY_FORM = {
   id: "",
+  employeeId: "",
   name: "",
   email: "",
   phone: "",
   role: "teacher",
   department: "",
   joiningDate: "",
+  exitDate: "",
   status: "working",
   profilePhoto: null,
   profilePhotoUrl: "",
 };
 
 const fieldMap = {
+  employee_id: "employeeId",
   joining_date: "joiningDate",
+  exit_date: "exitDate",
 };
 
 const useObjectUrl = (file) => {
@@ -71,6 +77,31 @@ const getDateValue = (value) => {
   return String(value).slice(0, 10);
 };
 
+const generateEmployeeId = (sequence) => {
+  const year = new Date().getFullYear();
+  const randomPart = String(Math.floor(Math.random() * 10000)).padStart(4, "0");
+  const sequencePart = String(sequence).padStart(3, "0");
+
+  return `EMP-${year}-${randomPart}-${sequencePart}`;
+};
+
+const getEmployeeCount = (data) => {
+  const list = Array.isArray(data) ? data : data?.results || [];
+  return data?.count ?? list.length;
+};
+
+const getNextEmployeeId = async () => {
+  const response = await callApi({
+    url: "/employees/",
+    method: "get",
+    params: {
+      page_size: 1,
+    },
+  });
+
+  return generateEmployeeId(getEmployeeCount(response) + 1);
+};
+
 const getDepartmentValue = (department) => {
   if (department && typeof department === "object") {
     return department.id ?? department.name ?? "";
@@ -89,23 +120,28 @@ const getDepartmentLabel = (employee) => {
   return employee.department_name || employee.departmentName || department || "";
 };
 
+const normalizeEmployee = (employee) => ({
+  ...employee,
+  name: employee.name || "",
+  email: employee.email || "",
+  phone: employee.phone || "",
+  employeeId: employee.employee_id || employee.employeeId || employee.staff_id || employee.staffId || employee.code || employee.id || "",
+  role: employee.role || "",
+  roleLabel: employee.designation || employee.designation_name || employee.designationName || getOptionLabel(ROLE_OPTIONS, employee.role),
+  department: getDepartmentValue(employee.department),
+  departmentLabel: getDepartmentLabel(employee),
+  joiningDate: getDateValue(employee.joining_date || employee.joiningDate),
+  exitDate: getDateValue(employee.exit_date || employee.exitDate),
+  status: employee.status || "",
+  statusLabel: getOptionLabel(STATUS_OPTIONS, employee.status),
+  address: employee.address || employee.current_address || employee.currentAddress || employee.permanent_address || employee.permanentAddress || "",
+  profilePhotoUrl: employee.photo || employee.profile_photo || employee.profilePhoto || employee.avatar || "",
+});
+
 const getEmployeeList = (data) => {
   const list = Array.isArray(data) ? data : data?.results || [];
 
-  return list.map((employee) => ({
-    ...employee,
-    name: employee.name || "",
-    email: employee.email || "",
-    phone: employee.phone || "",
-    role: employee.role || "",
-    roleLabel: getOptionLabel(ROLE_OPTIONS, employee.role),
-    department: getDepartmentValue(employee.department),
-    departmentLabel: getDepartmentLabel(employee),
-    joiningDate: getDateValue(employee.joining_date || employee.joiningDate),
-    status: employee.status || "",
-    statusLabel: getOptionLabel(STATUS_OPTIONS, employee.status),
-    profilePhotoUrl: employee.photo || employee.profile_photo || employee.profilePhoto || "",
-  }));
+  return list.map((employee) => normalizeEmployee(employee));
 };
 
 const getEmployeeTotal = (data) => {
@@ -135,26 +171,267 @@ const getDepartmentOptions = (data) => {
 const getEmployeeForm = (employee) => ({
   ...EMPTY_FORM,
   id: employee.id || "",
+  employeeId: employee.employee_id || employee.employeeId || employee.staff_id || employee.staffId || employee.code || employee.id || "",
   name: employee.name || "",
   email: employee.email || "",
   phone: employee.phone || "",
   role: employee.role || "teacher",
   department: String(getDepartmentValue(employee.department)),
   joiningDate: getDateValue(employee.joining_date || employee.joiningDate),
+  exitDate: getDateValue(employee.exit_date || employee.exitDate),
   status: employee.status || "working",
   profilePhoto: null,
   profilePhotoUrl: employee.photo || employee.profile_photo || employee.profilePhoto || "",
 });
 
-const buildEmployeePayload = (form) => ({
-  name: form.name.trim(),
-  email: form.email.trim(),
-  phone: form.phone.trim(),
-  role: form.role,
-  department: Number(form.department),
-  joining_date: form.joiningDate,
-  status: form.status,
-});
+const getEmployeeInitials = (name) => {
+  const initials = String(name || "")
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
+
+  return initials || "E";
+};
+
+const renderEmployeeAvatar = (employee, sizeClass = "h-10 w-10", textClass = "text-[12px]") => (
+  <div className={`grid shrink-0 place-items-center overflow-hidden rounded-full bg-slate-100 font-extrabold uppercase text-primary ${sizeClass} ${textClass}`}>
+    {employee.profilePhotoUrl ? (
+      <img src={employee.profilePhotoUrl} alt={employee.name} className="h-full w-full object-cover" />
+    ) : (
+      getEmployeeInitials(employee.name)
+    )}
+  </div>
+);
+
+const EmployeeDetailField = ({ label, value, className = "" }) => (
+  <div className={className}>
+    <label className="mb-1.5 block text-[12px] font-bold text-on-surface-variant">{label}</label>
+    <div className="min-h-[40px] rounded-lg border border-outline-variant bg-slate-50 px-3.5 py-2.5 text-[13px] font-semibold text-slate-700">
+      {value || "-"}
+    </div>
+  </div>
+);
+
+const EmployeeIdCardPreview = ({ employee, detailLoading }) => (
+  <div className="sm:col-span-2">
+    <div className="mb-3 flex items-center justify-between gap-3">
+      <h4 className="text-[14px] font-extrabold text-primary">Employee ID Card</h4>
+      <button
+        type="button"
+        onClick={() => downloadEmployeeIdCard(employee)}
+        className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-[11px] font-bold uppercase tracking-wider text-on-primary transition-opacity hover:opacity-90"
+      >
+        <Download className="h-4 w-4" />
+        Download
+      </button>
+    </div>
+    <div className="mx-auto w-full max-w-[280px] overflow-hidden rounded-xl border border-outline-variant bg-white shadow-sm">
+      <div className="bg-primary px-3.5 py-3.5 text-on-primary">
+        <div className="flex items-center gap-3">
+          <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full bg-white">
+            <img src={instituteLogo} alt="Institute logo" className="h-8 w-8 object-contain" />
+          </div>
+          <div>
+            <div className="text-[15px] font-extrabold leading-tight">NITE</div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-white/80">Employee ID Card</div>
+          </div>
+        </div>
+      </div>
+      <div className="px-4 py-4">
+        <div className="mb-4 flex justify-center">
+          {renderEmployeeAvatar(employee, "h-24 w-24", "text-[24px]")}
+        </div>
+        <div className="mb-4 text-center">
+          <div className="text-[16px] font-extrabold text-slate-900">{employee.name || "-"}</div>
+          {detailLoading && <Loader label="Loading complete details..." size="xs" className="mt-1 justify-center" labelClassName="text-[11px] text-slate-400" />}
+        </div>
+        <div className="space-y-2.5">
+          {[
+            { label: "Phone Number", value: employee.phone },
+            { label: "Employee ID", value: employee.employeeId },
+            { label: "Designation / Department", value: [employee.roleLabel, employee.departmentLabel].filter(Boolean).join(" / ") },
+          ].map((item) => (
+            <div key={item.label} className="rounded-lg bg-slate-50 p-2.5">
+              <div className="mb-1 text-[10px] font-bold uppercase tracking-wide text-slate-400">{item.label}</div>
+              <div className="break-words text-[12px] font-semibold text-slate-800">{item.value || "-"}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const loadCardImage = (src) =>
+  new Promise((resolve, reject) => {
+    if (!src) {
+      reject(new Error("Missing image source"));
+      return;
+    }
+
+    const image = new Image();
+    image.crossOrigin = "anonymous";
+    image.onload = () => resolve(image);
+    image.onerror = reject;
+    image.src = src;
+  });
+
+const drawWrappedText = (context, text, x, y, maxWidth, lineHeight, maxLines = 2) => {
+  const words = String(text || "").split(" ").filter(Boolean);
+  const lines = [];
+  let currentLine = "";
+
+  words.forEach((word) => {
+    const nextLine = currentLine ? `${currentLine} ${word}` : word;
+    if (context.measureText(nextLine).width <= maxWidth || !currentLine) {
+      currentLine = nextLine;
+      return;
+    }
+
+    lines.push(currentLine);
+    currentLine = word;
+  });
+
+  if (currentLine) lines.push(currentLine);
+
+  lines.slice(0, maxLines).forEach((line, index) => {
+    const visibleLine = index === maxLines - 1 && lines.length > maxLines ? `${line.replace(/\.+$/, "")}...` : line;
+    context.fillText(visibleLine, x, y + index * lineHeight);
+  });
+};
+
+const drawRoundImage = (context, image, x, y, size) => {
+  context.save();
+  context.beginPath();
+  context.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2);
+  context.clip();
+  context.drawImage(image, x, y, size, size);
+  context.restore();
+};
+
+const downloadEmployeeIdCard = async (employee) => {
+  const canvas = document.createElement("canvas");
+  const scale = 2;
+  const width = 300;
+  const height = 470;
+  canvas.width = width * scale;
+  canvas.height = height * scale;
+
+  const context = canvas.getContext("2d");
+  context.scale(scale, scale);
+  context.fillStyle = "#f8fafc";
+  context.fillRect(0, 0, width, height);
+
+  context.fillStyle = "#ffffff";
+  context.strokeStyle = "#dbe3ee";
+  context.lineWidth = 1;
+  context.beginPath();
+  context.roundRect(16, 16, 268, 438, 16);
+  context.fill();
+  context.stroke();
+
+  context.fillStyle = "#0f3b66";
+  context.beginPath();
+  context.roundRect(16, 16, 268, 82, 16);
+  context.fill();
+  context.fillRect(16, 70, 268, 28);
+
+  try {
+    const logo = await loadCardImage(instituteLogo);
+    context.fillStyle = "#ffffff";
+    context.beginPath();
+    context.arc(52, 57, 24, 0, Math.PI * 2);
+    context.fill();
+    drawRoundImage(context, logo, 32, 37, 40);
+  } catch {
+    context.fillStyle = "#ffffff";
+    context.beginPath();
+    context.arc(52, 57, 24, 0, Math.PI * 2);
+    context.fill();
+    context.fillStyle = "#0f3b66";
+    context.font = "700 13px Arial";
+    context.textAlign = "center";
+    context.fillText("NITE", 52, 62);
+  }
+
+  context.textAlign = "left";
+  context.fillStyle = "#ffffff";
+  context.font = "800 17px Arial";
+  context.fillText("NITE", 86, 51);
+  context.font = "700 10px Arial";
+  context.fillText("EMPLOYEE ID CARD", 86, 70);
+
+  context.fillStyle = "#eef6ff";
+  context.beginPath();
+  context.roundRect(105, 116, 90, 90, 45);
+  context.fill();
+
+  try {
+    const photo = await loadCardImage(employee.profilePhotoUrl);
+    drawRoundImage(context, photo, 105, 116, 90);
+  } catch {
+    context.fillStyle = "#0f3b66";
+    context.font = "800 28px Arial";
+    context.textAlign = "center";
+    context.fillText(getEmployeeInitials(employee.name), 150, 169);
+  }
+
+  context.textAlign = "center";
+  context.fillStyle = "#0f172a";
+  context.font = "800 18px Arial";
+  drawWrappedText(context, employee.name || "Employee", 150, 236, 220, 21, 2);
+
+  const designationDepartment = [employee.roleLabel, employee.departmentLabel].filter(Boolean).join(" / ");
+  const fields = [
+    ["Phone Number", employee.phone],
+    ["Employee ID", employee.employeeId],
+    ["Designation / Department", designationDepartment],
+    ["Address", employee.address],
+  ];
+
+  context.textAlign = "left";
+  let y = 288;
+  fields.forEach(([label, value]) => {
+    context.fillStyle = "#64748b";
+    context.font = "700 9px Arial";
+    context.fillText(label.toUpperCase(), 36, y);
+    context.fillStyle = "#111827";
+    context.font = "700 12px Arial";
+    drawWrappedText(context, value || "-", 36, y + 17, 228, 16, label === "Address" || label === "Designation / Department" ? 2 : 1);
+    y += label === "Address" ? 56 : 44;
+  });
+
+  const fileName = `employee-id-card-${String(employee.employeeId || employee.name || "employee")
+    .trim()
+    .replace(/[^a-z0-9]+/gi, "-")
+    .replace(/^-|-$/g, "")
+    .toLowerCase()}.png`;
+  const link = document.createElement("a");
+  link.download = fileName;
+  link.href = canvas.toDataURL("image/png");
+  link.click();
+};
+
+const buildEmployeePayload = (form, isEdit) => {
+  const payload = {
+    employee_id: form.employeeId.trim(),
+    name: form.name.trim(),
+    email: form.email.trim(),
+    phone: form.phone.trim(),
+    role: form.role,
+    department: Number(form.department),
+    joining_date: form.joiningDate,
+    status: form.status,
+  };
+
+  if (isEdit) {
+    payload.exit_date = form.exitDate || "";
+  }
+
+  return payload;
+};
 
 export default function StaffManagement() {
   const [employees, setEmployees] = useState([]);
@@ -169,6 +446,7 @@ export default function StaffManagement() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [employeeIdLoading, setEmployeeIdLoading] = useState(false);
   const [departments, setDepartments] = useState([]);
   const [departmentsLoading, setDepartmentsLoading] = useState(false);
   const [employeeToDelete, setEmployeeToDelete] = useState(null);
@@ -274,10 +552,20 @@ export default function StaffManagement() {
     setErrors((current) => ({ ...current, [field]: "" }));
   };
 
-  const openAdd = () => {
-    setForm(EMPTY_FORM);
+  const openAdd = async () => {
+    setForm({ ...EMPTY_FORM, employeeId: generateEmployeeId(totalEmployees + 1) });
     setErrors({});
     setModal("add");
+
+    try {
+      setEmployeeIdLoading(true);
+      const employeeId = await getNextEmployeeId();
+      setForm((current) => ({ ...current, employeeId }));
+    } catch {
+      toast.error("Unable to generate employee ID.");
+    } finally {
+      setEmployeeIdLoading(false);
+    }
   };
 
   const openEdit = (employee) => {
@@ -309,6 +597,7 @@ export default function StaffManagement() {
     const phonePattern = /^\+?\d[\d\s-]{7,}\d$/;
 
     if (!form.name.trim()) nextErrors.name = "Full name is required.";
+    if (!form.employeeId.trim()) nextErrors.employeeId = "Employee ID is required.";
     if (!form.email.trim()) nextErrors.email = "Email is required.";
     else if (!/^\S+@\S+\.\S+$/.test(form.email)) nextErrors.email = "Enter a valid email address.";
     if (!form.phone.trim()) nextErrors.phone = "Phone number is required.";
@@ -336,7 +625,7 @@ export default function StaffManagement() {
       await callApi({
         url: modal === "edit" ? `/employees/${form.id}/` : "/employees/",
         method: modal === "edit" ? "put" : "post",
-        data: buildEmployeePayload(form),
+        data: buildEmployeePayload(form, modal === "edit"),
       });
 
       toast.success(modal === "edit" ? "Employee updated successfully." : "Employee added successfully.");
@@ -381,7 +670,9 @@ export default function StaffManagement() {
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-[24px] font-extrabold text-primary">Employee Management</h1>
-          <p className="mt-1 text-[13px] text-on-surface-variant">{loading ? "Loading employees..." : `${totalEmployees} employees found`}</p>
+          <div className="mt-1 text-[13px] text-on-surface-variant">
+            {loading ? <Loader label="Loading employees..." /> : `${totalEmployees} employees found`}
+          </div>
         </div>
         <button
           type="button"
@@ -413,7 +704,7 @@ export default function StaffManagement() {
           <table className="w-full min-w-[940px] text-left">
             <thead className="bg-surface-container-low">
               <tr className="border-b border-outline-variant">
-                {["Name", "Role", "Department", "Phone", "Email", "Joining", "Status", "Actions"].map((heading) => (
+                {["Employee", "Role", "Department", "Phone", "Email", "Joining", "Status", "Actions"].map((heading) => (
                   <th key={heading} className="px-4 py-3 text-[11px] font-extrabold uppercase tracking-wider text-on-surface-variant">
                     {heading}
                   </th>
@@ -423,7 +714,15 @@ export default function StaffManagement() {
             <tbody className="divide-y divide-outline-variant">
               {employees.map((employee) => (
                 <tr key={employee.id} className="hover:bg-surface-container/40">
-                  <td className="px-4 py-3 font-bold text-primary">{employee.name}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex max-w-[240px] items-center gap-3">
+                      {renderEmployeeAvatar(employee)}
+                      <div className="min-w-0">
+                        <div className="truncate font-bold text-primary">{employee.name}</div>
+                        {/* <div className="truncate text-[12px] text-on-surface-variant">{employee.employeeId ? `ID: ${employee.employeeId}` : employee.email}</div> */}
+                      </div>
+                    </div>
+                  </td>
                   <td className="px-4 py-3 text-[13px] text-on-surface-variant">{employee.roleLabel}</td>
                   <td className="px-4 py-3 text-[13px] text-on-surface-variant">{employee.departmentLabel}</td>
                   <td className="px-4 py-3 text-[13px] text-on-surface-variant">{employee.phone}</td>
@@ -467,6 +766,13 @@ export default function StaffManagement() {
                   </td>
                 </tr>
               ))}
+              {loading && (
+                <tr>
+                  <td colSpan={8}>
+                    <Loader variant="block" label="Loading employees..." />
+                  </td>
+                </tr>
+              )}
               {!loading && employees.length === 0 && (
                 <tr>
                   <td className="px-4 py-8 text-center text-[13px] font-semibold text-on-surface-variant" colSpan={8}>
@@ -487,30 +793,43 @@ export default function StaffManagement() {
       </div>
 
       {selectedEmployee && (
-        <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/40" onClick={() => setSelectedEmployee(null)}>
-          <div className="h-full w-full max-w-md overflow-y-auto bg-white p-6 shadow-2xl" onClick={(event) => event.stopPropagation()}>
-            <div className="mb-6 flex items-center justify-between">
-              <h3 className="text-[17px] font-extrabold text-primary">Employee Detail</h3>
-              <button type="button" onClick={() => setSelectedEmployee(null)} className="text-xl text-slate-400 hover:text-gray-600">x</button>
-            </div>
-            <div className="mb-6 rounded-xl bg-slate-50 p-4">
-              <div className="text-[16px] font-extrabold text-primary">{selectedEmployee.name}</div>
-              <div className="mt-1 text-[13px] text-slate-500">{selectedEmployee.roleLabel}</div>
-              <div className="text-[13px] text-slate-500">{selectedEmployee.email}</div>
-              {detailLoading && <div className="mt-2 text-[12px] font-semibold text-slate-400">Loading latest details...</div>}
-            </div>
-            <div className="space-y-3">
-              {[
-                { label: "Department", value: selectedEmployee.departmentLabel },
-                { label: "Phone", value: selectedEmployee.phone },
-                { label: "Joining Date", value: selectedEmployee.joiningDate },
-                { label: "Status", value: selectedEmployee.statusLabel },
-              ].map((item) => (
-                <div key={item.label} className="rounded-xl bg-slate-50 p-3.5">
-                  <div className="mb-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">{item.label}</div>
-                  <div className="text-[14px] font-semibold text-gray-800">{item.value}</div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setSelectedEmployee(null)}>
+          <div className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-xl bg-white shadow-2xl" onClick={(event) => event.stopPropagation()}>
+            <div className="flex items-center justify-between gap-4 border-b border-outline-variant px-5 py-4">
+              <div>
+                <h3 className="text-[20px] font-extrabold text-primary">Employee Detail</h3>
+                <div className="mt-1 text-[13px] text-on-surface-variant">
+                  {detailLoading ? <Loader label="Loading complete details..." /> : "View employee profile and employment details."}
                 </div>
-              ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedEmployee(null)}
+                className="grid h-9 w-9 place-items-center rounded-lg text-on-surface-variant hover:bg-surface-container"
+                aria-label="Close employee detail"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="grid gap-5 p-5 sm:grid-cols-2">
+              <div className="flex flex-col items-center text-center sm:col-span-2">
+                <label className="mb-3 block text-[12px] font-bold text-on-surface-variant">Profile Photo</label>
+                {renderEmployeeAvatar(selectedEmployee, "h-28 w-28", "text-[26px]")}
+              </div>
+
+              <EmployeeDetailField label="Full Name" value={selectedEmployee.name} />
+              <EmployeeDetailField label="Employee ID" value={selectedEmployee.employeeId} />
+              <EmployeeDetailField label="Email" value={selectedEmployee.email} />
+              <EmployeeDetailField label="Phone" value={selectedEmployee.phone} />
+              <EmployeeDetailField label="Role" value={selectedEmployee.roleLabel} />
+              <EmployeeDetailField label="Department" value={selectedEmployee.departmentLabel} />
+              <EmployeeDetailField label="Joining Date" value={selectedEmployee.joiningDate} />
+              <EmployeeDetailField label="Exit Date" value={selectedEmployee.exitDate} />
+              <EmployeeDetailField label="Status" value={selectedEmployee.statusLabel} />
+              <EmployeeDetailField label="Address" value={selectedEmployee.address} className="sm:col-span-2" />
+
+              <EmployeeIdCardPreview employee={selectedEmployee} detailLoading={detailLoading} />
             </div>
           </div>
         </div>
@@ -542,6 +861,17 @@ export default function StaffManagement() {
                 {form.profilePhoto && <p className="mt-1 text-[11px] font-semibold text-on-surface-variant">{form.profilePhoto.name}</p>}
               </div>
 
+              {/* <div className="sm:col-span-2">
+                <label className="mb-1.5 block text-[12px] font-bold text-gray-600">Employee ID</label>
+                <input
+                  value={form.employeeId}
+                  readOnly
+                  placeholder={employeeIdLoading ? "Generating employee ID..." : "EMP-2026-4821-001"}
+                  className={`w-full rounded-lg border bg-slate-50 px-3.5 py-2.5 text-[13px] font-semibold text-slate-600 outline-none ${errors.employeeId ? "border-red-500" : "border-gray-300"}`}
+                />
+                {errors.employeeId && <p className="mt-1 text-[11px] text-red-600">{errors.employeeId}</p>}
+              </div> */}
+
               <div className="sm:col-span-2">
                 <label className="mb-1.5 block text-[12px] font-bold text-gray-600">Full Name</label>
                 <input
@@ -570,16 +900,20 @@ export default function StaffManagement() {
                 />
                 {errors.joiningDate && <p className="mt-1 text-[11px] text-red-600">{errors.joiningDate}</p>}
               </div>
-              <div className="sm:col-span-2">
-                <label className="mb-1.5 block text-[12px] font-bold text-gray-600">Email</label>
-                <input
-                  value={form.email}
-                  onChange={(event) => updateField("email", event.target.value)}
-                  className={`w-full rounded-lg border px-3.5 py-2.5 text-[13px] outline-none focus:border-primary ${errors.email ? "border-red-500 focus:border-red-500" : "border-gray-300"}`}
-                />
-                {errors.email && <p className="mt-1 text-[11px] text-red-600">{errors.email}</p>}
-              </div>
-              <div>
+              {modal === "edit" && (
+                <div>
+                  <label className="mb-1.5 block text-[12px] font-bold text-gray-600">Exit Date</label>
+                  <input
+                    type="date"
+                    value={form.exitDate}
+                    onChange={(event) => updateField("exitDate", event.target.value)}
+                    className={`w-full rounded-lg border px-3.5 py-2.5 text-[13px] outline-none focus:border-primary ${errors.exitDate ? "border-red-500 focus:border-red-500" : "border-gray-300"}`}
+                  />
+                  {errors.exitDate && <p className="mt-1 text-[11px] text-red-600">{errors.exitDate}</p>}
+                </div>
+              )}
+
+               <div>
                 <label className="mb-1.5 block text-[12px] font-bold text-gray-600">Role</label>
                 <select
                   value={form.role}
@@ -590,7 +924,7 @@ export default function StaffManagement() {
                 </select>
                 {errors.role && <p className="mt-1 text-[11px] text-red-600">{errors.role}</p>}
               </div>
-              {modal === "add" && (
+                {modal === "add" && (
                 <div>
                   <label className="mb-1.5 block text-[12px] font-bold text-gray-600">Department Name</label>
                   <select
@@ -610,6 +944,17 @@ export default function StaffManagement() {
                 </div>
               )}
               <div className="sm:col-span-2">
+                <label className="mb-1.5 block text-[12px] font-bold text-gray-600">Email</label>
+                <input
+                  value={form.email}
+                  onChange={(event) => updateField("email", event.target.value)}
+                  className={`w-full rounded-lg border px-3.5 py-2.5 text-[13px] outline-none focus:border-primary ${errors.email ? "border-red-500 focus:border-red-500" : "border-gray-300"}`}
+                />
+                {errors.email && <p className="mt-1 text-[11px] text-red-600">{errors.email}</p>}
+              </div>
+             
+            
+              <div className="sm:col-span-2">
                 <label className="mb-1.5 block text-[12px] font-bold text-gray-600">Status</label>
                 <select
                   value={form.status}
@@ -622,9 +967,9 @@ export default function StaffManagement() {
               </div>
             </div>
             <div className="flex gap-3 border-t border-gray-100 px-5 py-4">
-              <button type="button" disabled={saving} onClick={() => setModal(null)} className="flex-1 rounded-lg border border-gray-300 py-2.5 text-[13px] font-semibold text-gray-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60">Cancel</button>
-              <button type="button" disabled={saving} onClick={save} className="flex-1 rounded-lg bg-secondary py-2.5 text-[13px] font-extrabold text-primary hover:bg-[#c98a00] disabled:cursor-not-allowed disabled:opacity-60">
-                {saving ? "Saving..." : modal === "add" ? "Add Employee" : "Save Changes"}
+              <button type="button" disabled={saving || employeeIdLoading} onClick={() => setModal(null)} className="flex-1 rounded-lg border border-gray-300 py-2.5 text-[13px] font-semibold text-gray-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60">Cancel</button>
+              <button type="button" disabled={saving || employeeIdLoading} onClick={save} className="flex-1 rounded-lg bg-secondary py-2.5 text-[13px] font-extrabold text-primary hover:bg-[#c98a00] disabled:cursor-not-allowed disabled:opacity-60">
+                {saving ? <Loader variant="button" label="Saving..." /> : employeeIdLoading ? <Loader variant="button" label="Generating..." /> : modal === "add" ? "Add Employee" : "Save Changes"}
               </button>
             </div>
           </div>
@@ -660,7 +1005,7 @@ export default function StaffManagement() {
                 disabled={deleting}
                 className="rounded-lg bg-red-600 px-4 py-2.5 text-[13px] font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {deleting ? "Deleting..." : "Delete"}
+                {deleting ? <Loader variant="button" label="Deleting..." /> : "Delete"}
               </button>
             </div>
           </div>

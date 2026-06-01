@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import Pagination from "./common/Pagination.jsx";
 import { callApi } from "../services/ApiService.js";
+import Loader from "./common/Loader.jsx";
 
 const getEnquiryList = (data) => {
   const list = Array.isArray(data) ? data : data?.results || [];
@@ -85,9 +86,9 @@ export default function Enquiries() {
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-[24px] font-extrabold text-primary">Enquiry Management</h1>
-          <p className="mt-1 text-[13px] text-on-surface-variant">
-            {loading ? "Loading enquiries..." : `${totalEnquiries} total enquiries`}
-          </p>
+          <div className="mt-1 text-[13px] text-on-surface-variant">
+            {loading ? <Loader label="Loading enquiries..." /> : `${totalEnquiries} total enquiries`}
+          </div>
         </div>
         <div className="w-full max-w-sm rounded-xl border border-outline-variant bg-white p-3 shadow-sm sm:w-auto">
           <div className="relative">
@@ -146,6 +147,13 @@ export default function Enquiries() {
                   </td>
                 </tr>
               ))}
+              {loading && (
+                <tr>
+                  <td colSpan={4}>
+                    <Loader variant="block" label="Loading enquiries..." />
+                  </td>
+                </tr>
+              )}
               {enquiries.length === 0 && !loading && (
                 <tr>
                   <td colSpan={4} className="px-4 py-12 text-center text-[14px] text-slate-400">

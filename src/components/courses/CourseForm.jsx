@@ -3,6 +3,7 @@ import { ArrowLeft, Plus, Save, Trash2 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { callApi, getAuthHeaders } from "../../services/ApiService.js";
 import toast from "react-hot-toast";
+import Loader from "../common/Loader.jsx";
 
 const initialForm = {
   title: "",
@@ -205,7 +206,9 @@ export default function CourseForm({ mode = "add" }) {
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-[24px] font-extrabold text-primary">{title}</h1>
-          <p className="mt-1 text-[13px] text-on-surface-variant">{courseLoading ? "Loading course details..." : subtitle}</p>
+          <div className="mt-1 text-[13px] text-on-surface-variant">
+            {courseLoading ? <Loader label="Loading course details..." /> : subtitle}
+          </div>
         </div>
         <Link
           to="/courses"
@@ -365,7 +368,7 @@ export default function CourseForm({ mode = "add" }) {
               className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-[13px] font-bold text-on-primary transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
             >
               <Save className="h-4 w-4" />
-              {loading ? "Saving..." : isEdit ? "Save Changes" : "Save Course"}
+              {loading ? <Loader variant="button" label="Saving..." /> : isEdit ? "Save Changes" : "Save Course"}
             </button>
           )}
         </div>
