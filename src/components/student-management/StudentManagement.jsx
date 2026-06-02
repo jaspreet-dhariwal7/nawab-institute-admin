@@ -3,7 +3,7 @@ import { Download, Edit, Eye, Plus, Search, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import Pagination from "../common/Pagination.jsx";
 import { callApi } from "../../services/ApiService.js";
-import instituteLogo from "../../assets/nite_logo.png";
+import instituteLogo from "../../assets/nite-logo.jpg";
 import Loader from "../common/Loader.jsx";
 
 const getCourseName = (course) => {

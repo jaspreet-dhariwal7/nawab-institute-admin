@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { BookOpen, BriefcaseBusiness, CircleHelp, GraduationCap, LayoutDashboard, LogOut } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { cn } from '../../lib/utlis.js';
-import niteLogo from '../../assets/nite_logo.png';
+import niteLogo from '../../assets/nite-logo.jpg';
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },

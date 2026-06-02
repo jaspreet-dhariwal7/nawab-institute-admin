@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import { cn } from "../../lib/utlis.js";
 import { callApi } from "../../services/ApiService.js";
 import Pagination from "../common/Pagination.jsx";
-import instituteLogo from "../../assets/nite_logo.png";
+import instituteLogo from "../../assets/nite-logo.jpg";
 import Loader from "../common/Loader.jsx";
 
 const ROLE_OPTIONS = [
