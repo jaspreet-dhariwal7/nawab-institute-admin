@@ -126,7 +126,7 @@ const StudentIdCardPreview = ({ student }) => (
         Download
       </button>
     </div>
-    <div className="overflow-hidden rounded-xl border border-outline-variant bg-white shadow-sm">
+    <div className="mx-auto w-full max-w-[400px] overflow-hidden rounded-xl border border-outline-variant bg-white shadow-sm">
       <div className="bg-primary px-4 py-4 text-on-primary">
         <div className="flex items-center gap-3">
           <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-full bg-white">

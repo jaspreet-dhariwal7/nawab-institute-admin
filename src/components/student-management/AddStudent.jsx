@@ -416,6 +416,7 @@ export default function AddStudent() {
           <div>
             <label className="mb-1.5 block text-[12px] font-bold text-on-surface-variant">Phone</label>
             <input
+            // type="number"
               required
               value={form.phone}
               onChange={(event) => updateField("phone", event.target.value)}

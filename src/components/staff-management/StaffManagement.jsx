@@ -37,6 +37,7 @@ const EMPTY_FORM = {
 };
 
 const fieldMap = {
+  photo: "profilePhoto",
   employee_id: "employeeId",
   joining_date: "joiningDate",
   exit_date: "exitDate",
@@ -414,20 +415,33 @@ const downloadEmployeeIdCard = async (employee) => {
   link.click();
 };
 
+const appendPayloadField = (payload, key, value, { skipEmptyFile = false } = {}) => {
+  if (skipEmptyFile && !value) return;
+
+  if (value instanceof File) {
+    payload.append(key, value);
+    return;
+  }
+
+  payload.append(key, value ?? "");
+};
+
 const buildEmployeePayload = (form, isEdit) => {
-  const payload = {
-    employee_id: form.employeeId.trim(),
-    name: form.name.trim(),
-    email: form.email.trim(),
-    phone: form.phone.trim(),
-    role: form.role,
-    department: Number(form.department),
-    joining_date: form.joiningDate,
-    status: form.status,
-  };
+  const payload = new FormData();
+  const skipEmptyFile = Boolean(isEdit);
+
+  appendPayloadField(payload, "photo", form.profilePhoto, { skipEmptyFile });
+  appendPayloadField(payload, "employee_id", form.employeeId);
+  appendPayloadField(payload, "name", form.name.trim());
+  appendPayloadField(payload, "email", form.email.trim());
+  appendPayloadField(payload, "phone", form.phone.trim());
+  appendPayloadField(payload, "role", form.role);
+  appendPayloadField(payload, "department", Number(form.department));
+  appendPayloadField(payload, "joining_date", form.joiningDate);
+  appendPayloadField(payload, "status", form.status);
 
   if (isEdit) {
-    payload.exit_date = form.exitDate || "";
+    appendPayloadField(payload, "exit_date", form.exitDate);
   }
 
   return payload;
@@ -597,7 +611,7 @@ export default function StaffManagement() {
     const phonePattern = /^\+?\d[\d\s-]{7,}\d$/;
 
     if (!form.name.trim()) nextErrors.name = "Full name is required.";
-    if (!form.employeeId.trim()) nextErrors.employeeId = "Employee ID is required.";
+    // if (!form.employeeId.trim()) nextErrors.employeeId = "Employee ID is required.";
     if (!form.email.trim()) nextErrors.email = "Email is required.";
     else if (!/^\S+@\S+\.\S+$/.test(form.email)) nextErrors.email = "Enter a valid email address.";
     if (!form.phone.trim()) nextErrors.phone = "Phone number is required.";
@@ -861,7 +875,7 @@ export default function StaffManagement() {
                 {form.profilePhoto && <p className="mt-1 text-[11px] font-semibold text-on-surface-variant">{form.profilePhoto.name}</p>}
               </div>
 
-              {/* <div className="sm:col-span-2">
+              <div className="sm:col-span-2">
                 <label className="mb-1.5 block text-[12px] font-bold text-gray-600">Employee ID</label>
                 <input
                   value={form.employeeId}
@@ -870,7 +884,7 @@ export default function StaffManagement() {
                   className={`w-full rounded-lg border bg-slate-50 px-3.5 py-2.5 text-[13px] font-semibold text-slate-600 outline-none ${errors.employeeId ? "border-red-500" : "border-gray-300"}`}
                 />
                 {errors.employeeId && <p className="mt-1 text-[11px] text-red-600">{errors.employeeId}</p>}
-              </div> */}
+              </div>
 
               <div className="sm:col-span-2">
                 <label className="mb-1.5 block text-[12px] font-bold text-gray-600">Full Name</label>

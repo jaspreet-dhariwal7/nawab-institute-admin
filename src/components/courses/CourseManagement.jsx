@@ -30,7 +30,7 @@ const formatCourseType = (type) => {
 export default function CourseManagement() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(15);
   const [courses, setCourses] = useState([]);
   const [totalCourses, setTotalCourses] = useState(0);
   const [loading, setLoading] = useState(false);
