@@ -126,21 +126,21 @@ const StudentIdCardPreview = ({ student }) => (
         Download
       </button>
     </div>
-    <div className="mx-auto w-full max-w-[400px] overflow-hidden rounded-xl border border-outline-variant bg-white shadow-sm">
-      <div className="bg-primary px-4 py-4 text-on-primary">
+    <div className="mx-auto w-full max-w-[280px] overflow-hidden rounded-xl border border-outline-variant bg-white shadow-sm">
+      <div className="bg-primary px-3.5 py-3.5 text-on-primary">
         <div className="flex items-center gap-3">
-          <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-full bg-white">
-            <img src={instituteLogo} alt="Institute logo" className="h-10 w-10 object-contain" />
+          <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full bg-white">
+            <img src={instituteLogo} alt="Institute logo" className="h-8 w-8 object-contain" />
           </div>
           <div>
-            <div className="text-[17px] font-extrabold leading-tight">NITE</div>
-            <div className="text-[11px] font-bold uppercase tracking-wider text-white/80">Student ID Card</div>
+            <div className="text-[15px] font-extrabold leading-tight">NITE</div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-white/80">Student ID Card</div>
           </div>
         </div>
       </div>
-      <div className="px-5 py-5">
-        <div className="mb-5 flex justify-center">
-          <div className="grid h-28 w-28 place-items-center overflow-hidden rounded-full bg-slate-100 text-[26px] font-extrabold text-primary">
+      <div className="px-4 py-4">
+        <div className="mb-4 flex justify-center">
+          <div className="grid h-24 w-24 place-items-center overflow-hidden rounded-full bg-slate-100 text-[24px] font-extrabold text-primary">
             {student.avatarUrl ? (
               <img src={student.avatarUrl} alt={student.name} className="h-full w-full object-cover" />
             ) : (
@@ -148,19 +148,19 @@ const StudentIdCardPreview = ({ student }) => (
             )}
           </div>
         </div>
-        <div className="mb-5 text-center">
-          <div className="text-[18px] font-extrabold text-slate-900">{student.name || "-"}</div>
+        <div className="mb-4 text-center">
+          <div className="text-[16px] font-extrabold text-slate-900">{student.name || "-"}</div>
         </div>
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {[
             { label: "Father Name", value: student.fatherName },
             { label: "Phone Number", value: student.phone },
             { label: "Roll No.", value: student.rollNumber },
-            { label: "Address", value: student.address },
+            // { label: "Address", value: student.address },
           ].map((item) => (
-            <div key={item.label} className="rounded-lg bg-slate-50 p-3">
+            <div key={item.label} className="rounded-lg bg-slate-50 p-2.5">
               <div className="mb-1 text-[10px] font-bold uppercase tracking-wide text-slate-400">{item.label}</div>
-              <div className="break-words text-[13px] font-semibold text-slate-800">{item.value || "-"}</div>
+              <div className="break-words text-[12px] font-semibold text-slate-800">{item.value || "-"}</div>
             </div>
           ))}
         </div>
