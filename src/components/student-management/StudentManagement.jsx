@@ -151,6 +151,7 @@ const StudentIdCardPreview = ({ student }) => (
         </div>
         <div className="mb-4 text-center">
           <div className="text-[16px] font-extrabold text-slate-900">{student.name || "-"}</div>
+          <div className="mt-1 text-[10px] font-bold text-slate-500">{student.courseName || "-"}</div>
         </div>
         <div className="space-y-2.5">
           {[
@@ -287,7 +288,11 @@ const downloadStudentIdCard = async (student) => {
   context.textAlign = "center";
   context.fillStyle = "#0f172a";
   context.font = "800 21px Arial";
-  drawWrappedText(context, student.name || "Student", 180, 296, 250, 24, 2);
+  drawWrappedText(context, student.name || "Student", 180, 294, 250, 22, 2);
+
+  context.fillStyle = "#64748b";
+  context.font = "700 13px Arial";
+  drawWrappedText(context, student.courseName || "-", 180, 338, 260, 16, 2);
 
   const fields = [
     ["Father Name", student.fatherName],
@@ -297,7 +302,7 @@ const downloadStudentIdCard = async (student) => {
   ];
 
   context.textAlign = "left";
-  let y = 350;
+  let y = 374;
   fields.forEach(([label, value]) => {
     context.fillStyle = "#64748b";
     context.font = "700 10px Arial";

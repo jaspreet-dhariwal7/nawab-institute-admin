@@ -24,21 +24,21 @@ const initialForm = {
 };
 
 const courses = [
-  { id: 1, name: "Diploma in Computer Application" },
-  { id: 2, name: "Advance Diploma in Computer Application" },
-  { id: 3, name: "Diploma in Business Management" },
-  { id: 4, name: "Diploma in Business Administration" },
-  { id: 5, name: "Diploma in Hardware & Networking" },
-  { id: 6, name: "Diploma in Digital Marketing" },
-  { id: 7, name: "Basic Computer Course" },
-  { id: 8, name: "Advance Basic" },
-  { id: 9, name: "Tally ERP Course" },
-  { id: 10, name: "CorelDraw Course" },
-  { id: 11, name: "Adobe Photoshop Course" },
-  { id: 12, name: "HTML & Web Designing" },
-  { id: 13, name: "Visual Basic" },
-  { id: 14, name: "Computer Typing" },
-  { id: 15, name: "Internet & Email" },
+  { id: 3, name: "Diploma in Computer Application" },
+  { id: 4, name: "Advance Diploma in Computer Application" },
+  { id: 5, name: "Diploma in Business Management" },
+  { id: 6, name: "Diploma in Business Administration" },
+  { id: 7, name: "Diploma in Hardware & Networking" },
+  { id: 8, name: "Diploma in Digital Marketing" },
+  { id: 9, name: "Basic Computers" },
+  { id: 10, name: "Advance Basic Computers" },
+  { id: 11, name: "Tally ERP" },
+  { id: 12, name: "CorelDraw" },
+  { id: 13, name: "Adobe Photoshop" },
+  { id: 14, name: "HTML & Web Designing" },
+  { id: 15, name: "Visual Basic" },
+  { id: 16, name: "Computer Typing" },
+  { id: 17, name: "Internet & Email" },
 ];
 
 const useObjectUrl = (file) => {

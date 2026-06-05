@@ -717,7 +717,7 @@ export default function StaffManagement() {
             <thead className="bg-surface-container-low">
               <tr className="border-b border-outline-variant">
                 {["Employee", "Role", "Department", "Phone", "Email", "Joining", "Status", "Actions"].map((heading) => (
-                  <th key={heading} className="px-4 py-3 text-[11px] font-extrabold uppercase tracking-wider text-on-surface-variant">
+                  <th key={heading} className="px-4 py-3 text-center text-[11px] font-extrabold uppercase tracking-wider text-on-surface-variant">
                     {heading}
                   </th>
                 ))}

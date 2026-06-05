@@ -28,6 +28,14 @@ const formatCourseType = (type) => {
   return labels[type] || type;
 };
 
+const formatDuration = (duration) => {
+  if (!duration) return "-";
+
+  const value = Number(duration);
+
+  return `${value} ${value === 1 ? "Month" : "Months"}`;
+};
+
 export default function CourseManagement() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -142,7 +150,7 @@ export default function CourseManagement() {
             <thead className="bg-surface-container-low">
               <tr className="border-b border-outline-variant">
                 {["Course", "Type", "Duration", "Actions"].map((heading) => (
-                  <th key={heading} className="px-4 py-3 text-[11px] font-extrabold uppercase tracking-wider text-on-surface-variant">
+                  <th key={heading} className={`px-4 py-3 text-[11px] font-extrabold uppercase tracking-wider text-on-surface-variant ${ heading === "Actions" ? "text-center" : "" }`}>
                     {heading}
                   </th>
                 ))}
@@ -165,9 +173,9 @@ export default function CourseManagement() {
                     <div className="max-w-[360px] truncate text-[12px] text-on-surface-variant">{course.description}</div>
                   </td>
                   <td className="px-4 py-3 text-[13px] font-semibold text-on-surface-variant">{formatCourseType(course.type)}</td>
-                  <td className="px-4 py-3 text-[13px] text-on-surface-variant">{course.duration}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex justify-end gap-1">
+                  <td className="px-4 py-3 text-[13px] text-on-surface-variant">{formatDuration(course.duration)}</td>
+                  <td className="px-4 py-3" text-center>
+                    <div className="flex justify-center items-center gap-2">
                       <Link
                         to={`/courses/view/${course.id}`}
                         className="grid h-8 w-8 place-items-center rounded-lg text-on-surface-variant hover:bg-surface-container"
