@@ -3,6 +3,7 @@ import { BookOpen, BriefcaseBusiness, CircleHelp, GraduationCap, LayoutDashboard
 import { NavLink, useNavigate } from 'react-router-dom';
 import { cn } from '../../lib/utlis.js';
 import niteLogo from '../../assets/nite-logo.jpg';
+import Cookies from 'js-cookie';
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
@@ -18,6 +19,7 @@ export default function Sidebar({ isOpen, onClose }) {
 
   const confirmLogout = () => {
     setShowLogoutModal(false);
+    Cookies.remove("token");
     navigate("/");
   };
 

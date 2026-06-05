@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { ArrowRight, Lock, Mail } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowRight, Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import niteLogo from "../assets/nite-logo.jpg";
 import { callApi } from "../services/ApiService";
@@ -21,7 +21,16 @@ export default function Login() {
   const [error, setError] = useState({});
   const [formError, setFormError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
   const navigate = useNavigate();
+
+  useEffect(()=>{
+    const token = Cookies.get("token");
+    if(token){
+      navigate("/dashboard");
+    }
+  },[])
 
   const inputHandler = (e) => {
     const { name, value } = e.target;
@@ -82,19 +91,13 @@ export default function Login() {
   return (
     <main className="min-h-screen bg-[#f5f5f5] text-[#222] lg:grid lg:grid-cols-2">
       <section className="relative hidden min-h-screen overflow-hidden bg-[#020818] lg:flex lg:flex-col lg:items-center lg:justify-center">
-       
         <div className="absolute inset-0 bg-[#020818]/85" />
         <div className="absolute inset-x-0 top-0 h-[116px] bg-[#020818]/80" />
         <div className="absolute inset-x-0 bottom-0 h-[124px] bg-[#020818]/80" />
 
         <div className="relative  flex h-full w-full max-w-[520px] flex-col items-center justify-center px-10 text-center">
           <div className="w-40 h-40 mb-5  p-3">
-            
-              <img
-            src={niteLogo}
-            alt="img"
-            className="rounded-xl"
-          />
+            <img src={niteLogo} alt="img" className="rounded-xl" />
           </div>
 
           <div className="mt-20">
@@ -102,8 +105,9 @@ export default function Login() {
               Cultivating Technical Excellence & Innovation
             </h1>
             <p className="mx-auto mt-10 max-w-[430px] text-[16px] font-semibold leading-7 text-white/82">
-              Access the Nawab Institute of Technical Education administrative ecosystem.
-              Integrated management for the future of technical learning.
+              Access the Nawab Institute of Technical Education administrative
+              ecosystem. Integrated management for the future of technical
+              learning.
             </p>
           </div>
         </div>
@@ -124,7 +128,10 @@ export default function Login() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-1.5">
-              <label htmlFor="email" className="block text-[11px] font-black uppercase tracking-[0.02em] text-[#4f5260]">
+              <label
+                htmlFor="email"
+                className="block text-[11px] font-black uppercase tracking-[0.02em] text-[#4f5260]"
+              >
                 Administrator Email
               </label>
               <div className="relative">
@@ -140,33 +147,53 @@ export default function Login() {
                 />
               </div>
               {error?.email && (
-                <p className="pt-1 text-xs font-semibold text-[#dc000b]">{error.email}</p>
+                <p className="pt-1 text-xs font-semibold text-[#dc000b]">
+                  {error.email}
+                </p>
               )}
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="password" className="block text-[11px] font-black uppercase tracking-[0.02em] text-[#4f5260]">
+              <label
+                htmlFor="password"
+                className="block text-[11px] font-black uppercase tracking-[0.02em] text-[#4f5260]"
+              >
                 Password
               </label>
               <div className="relative">
                 <Lock className="pointer-events-none absolute left-3.5 top-1/2 h-[19px] w-[19px] -translate-y-1/2 text-[#777d8c]" />
                 <input
                   id="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   name="password"
                   value={form.password}
                   onChange={inputHandler}
                   placeholder="••••••••"
                   className="h-[47px] w-full rounded-[7px] border border-[#cfd3db] bg-[#f9fafb] pl-10 pr-4 text-[14px] font-semibold text-[#4b5260] outline-none transition focus:border-[#ffb21d] focus:bg-white focus:ring-2 focus:ring-[#ffb21d]/25"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#777d8c] hover:text-[#4b5260]"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
+                </button>
               </div>
               {error?.password && (
-                <p className="pt-1 text-xs font-semibold text-[#dc000b]">{error?.password}</p>
+                <p className="pt-1 text-xs font-semibold text-[#dc000b]">
+                  {error?.password}
+                </p>
               )}
             </div>
 
             {formError && (
-              <p className="text-center text-xs font-semibold text-[#dc000b]">{formError}</p>
+              <p className="text-center text-xs font-semibold text-[#dc000b]">
+                {formError}
+              </p>
             )}
 
             <button

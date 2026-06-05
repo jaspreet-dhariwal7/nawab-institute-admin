@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import Pagination from "../common/Pagination.jsx";
 import { callApi } from "../../services/ApiService.js";
 import Loader from "../common/Loader.jsx";
+import NoDataFound from "../common/NoDataFound.jsx";
 
 const getCourseList = (data) => {
   const list = Array.isArray(data) ? data : data?.results || [];
@@ -30,7 +31,7 @@ const formatCourseType = (type) => {
 export default function CourseManagement() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(15);
+  const [pageSize, setPageSize] = useState(10);
   const [courses, setCourses] = useState([]);
   const [totalCourses, setTotalCourses] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -48,7 +49,7 @@ export default function CourseManagement() {
           method: "get",
           params: {
             page,
-            // page_size: pageSize,
+             page_size: pageSize,
             ...(search.trim() ? { search: search.trim() } : {}),
           },
         });
@@ -110,9 +111,6 @@ export default function CourseManagement() {
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-[24px] font-extrabold text-primary">Course Catalog</h1>
-          <div className="mt-1 text-[13px] text-on-surface-variant">
-            {loading ? <Loader label="Loading courses..." /> : `${totalCourses} courses found`}
-          </div>
         </div>
         <Link
           to="/courses/add"
@@ -151,7 +149,16 @@ export default function CourseManagement() {
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant">
-              {courses.map((course) => (
+             
+              {loading ? (
+                <tr>
+                  <td colSpan={4}>
+                    <Loader variant="block" label="Loading courses..." />
+                  </td>
+                </tr>
+              )
+            :(
+               courses.map((course) => (
                 <tr key={course.id} className="hover:bg-surface-container/40">
                   <td className="px-4 py-3">
                     <div className="font-bold text-primary">{course.title}</div>
@@ -186,11 +193,13 @@ export default function CourseManagement() {
                     </div>
                   </td>
                 </tr>
-              ))}
-              {loading && (
+              ))
+
+            )}
+              {!loading && courses.length === 0 && (
                 <tr>
                   <td colSpan={4}>
-                    <Loader variant="block" label="Loading courses..." />
+                    <NoDataFound title="No courses found" />
                   </td>
                 </tr>
               )}

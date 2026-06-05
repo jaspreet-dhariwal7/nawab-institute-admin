@@ -5,6 +5,7 @@ import Pagination from "../common/Pagination.jsx";
 import { callApi } from "../../services/ApiService.js";
 import instituteLogo from "../../assets/nite-logo.jpg";
 import Loader from "../common/Loader.jsx";
+import NoDataFound from "../common/NoDataFound.jsx";
 
 const getCourseName = (course) => {
   if (!course) return "";
@@ -451,9 +452,6 @@ export default function StudentManagement() {
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-[24px] font-extrabold text-primary">Student Management</h1>
-          <div className="mt-1 text-[13px] text-on-surface-variant">
-            {loading ? <Loader label="Loading students..." /> : `${totalStudents} students found`}
-          </div>
         </div>
         <Link
           to="/students/add"
@@ -492,11 +490,20 @@ export default function StudentManagement() {
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant">
-              {students.map((student) => renderStudentRow(student, setSelectedStudent))}
-              {loading && (
+             
+              {loading ? (
                 <tr>
                   <td colSpan={5}>
                     <Loader variant="block" label="Loading students..." />
+                  </td>
+                </tr>
+              ) : (
+                  students.map((student) => renderStudentRow(student, setSelectedStudent))
+              )}
+              {!loading && students.length === 0 && (
+                <tr>
+                  <td colSpan={5}>
+                    <NoDataFound title="No students found" />
                   </td>
                 </tr>
               )}

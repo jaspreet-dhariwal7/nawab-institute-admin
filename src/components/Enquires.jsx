@@ -7,7 +7,10 @@ import Loader from "./common/Loader.jsx";
 const getEnquiryList = (data) => {
   const list = Array.isArray(data) ? data : data?.results || [];
   return list.map((item) => ({
-    id: item.id ?? item.pk ?? `${item.email || item.phone}-${item.date || item.created_at}`,
+    id:
+      item.id ??
+      item.pk ??
+      `${item.email || item.phone}-${item.date || item.created_at}`,
     name: item.name || item.full_name || item.first_name || "Unknown",
     phone: item.phone || item.mobile || item.contact_number || "",
     email: item.email || item.contact_email || "",
@@ -39,7 +42,7 @@ export default function Enquiries() {
   const [enquiries, setEnquiries] = useState([]);
   const [selected, setSelected] = useState(null);
   const [totalEnquiries, setTotalEnquiries] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);  
 
   useEffect(() => {
     let isActive = true;
@@ -85,10 +88,9 @@ export default function Enquiries() {
     <div className="space-y-5">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <h1 className="text-[24px] font-extrabold text-primary">Enquiry Management</h1>
-          <div className="mt-1 text-[13px] text-on-surface-variant">
-            {loading ? <Loader label="Loading enquiries..." /> : `${totalEnquiries} total enquiries`}
-          </div>
+          <h1 className="text-[24px] font-extrabold text-primary">
+            Enquiry Management
+          </h1>
         </div>
         <div className="w-full max-w-sm rounded-xl border border-outline-variant bg-white p-3 shadow-sm sm:w-auto">
           <div className="relative">
@@ -112,51 +114,69 @@ export default function Enquiries() {
             <thead className="bg-surface-container-low">
               <tr className="border-b border-outline-variant">
                 {["Name", "Phone / Email", "Date", "Message"].map((heading) => (
-                  <th key={heading} className="px-4 py-3 text-[11px] font-extrabold uppercase tracking-wider text-on-surface-variant">
+                  <th
+                    key={heading}
+                    className="px-4 py-3 text-[11px] font-extrabold uppercase tracking-wider text-on-surface-variant"
+                  >
                     {heading}
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant">
-              {enquiries.map((enquiry) => (
-                <tr key={enquiry.id} className="hover:bg-surface-container/40">
-                  <td className="px-4 py-3 font-bold text-primary">{enquiry.name}</td>
-                  <td className="px-4 py-3">
-                    <div className="text-[13px] text-on-surface-variant">{enquiry.phone}</div>
-                    <div className="text-[12px] text-slate-400">{enquiry.email}</div>
-                  </td>
-                  <td className="px-4 py-3 text-[13px] text-on-surface-variant">{formatDateTime(enquiry.date)}</td>
-                  <td className="px-4 py-3">
-                    <div className="max-w-[360px] text-[13px] text-on-surface-variant">
-                      {enquiry.message.length > 25 ? (
-                        <>
-                          {`${enquiry.message.slice(0, 25)}...`}
-                          <button
-                            type="button"
-                            onClick={() => setSelected(enquiry)}
-                            className="ml-2 text-[12px] font-semibold text-primary underline"
-                          >
-                            See more
-                          </button>
-                        </>
-                      ) : (
-                        enquiry.message
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {loading && (
+              {loading ? (
                 <tr>
                   <td colSpan={4}>
                     <Loader variant="block" label="Loading enquiries..." />
                   </td>
                 </tr>
+              ) : (
+                enquiries?.map((enquiry) => (
+                  <tr
+                    key={enquiry.id}
+                    className="hover:bg-surface-container/40"
+                  >
+                    <td className="px-4 py-3 font-bold text-primary">
+                      {enquiry.name}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="text-[13px] text-on-surface-variant">
+                        {enquiry.phone}
+                      </div>
+                      <div className="text-[12px] text-slate-400">
+                        {enquiry.email}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-[13px] text-on-surface-variant">
+                      {formatDateTime(enquiry.date)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="max-w-[360px] text-[13px] text-on-surface-variant">
+                        {enquiry.message.length > 25 ? (
+                          <>
+                            {`${enquiry.message.slice(0, 25)}...`}
+                            <button
+                              type="button"
+                              onClick={() => setSelected(enquiry)}
+                              className="ml-2 text-[12px] font-semibold text-primary underline"
+                            >
+                              See more
+                            </button>
+                          </>
+                        ) : (
+                          enquiry.message
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
               )}
               {enquiries.length === 0 && !loading && (
                 <tr>
-                  <td colSpan={4} className="px-4 py-12 text-center text-[14px] text-slate-400">
+                  <td
+                    colSpan={4}
+                    className="px-4 py-12 text-center text-[14px] text-slate-400"
+                  >
                     No enquiries found.
                   </td>
                 </tr>
@@ -177,11 +197,18 @@ export default function Enquiries() {
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6"
           onClick={() => setSelected(null)}
         >
-          <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl" onClick={(event) => event.stopPropagation()}>
+          <div
+            className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
             <div className="mb-4 flex items-start justify-between gap-4">
               <div>
-                <h3 className="text-[18px] font-extrabold text-slate-900">Full Enquiry Message</h3>
-                <p className="mt-1 text-[13px] text-slate-500">{formatDateTime(selected.date)}</p>
+                <h3 className="text-[18px] font-extrabold text-slate-900">
+                  Full Enquiry Message
+                </h3>
+                <p className="mt-1 text-[13px] text-slate-500">
+                  {formatDateTime(selected.date)}
+                </p>
               </div>
               <button
                 type="button"
@@ -197,18 +224,25 @@ export default function Enquiries() {
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-2xl bg-slate-50 p-4">
-                <div className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Name</div>
-                <div className="mt-2 text-[14px] font-semibold text-slate-900">{selected.name}</div>
+                <div className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                  Name
+                </div>
+                <div className="mt-2 text-[14px] font-semibold text-slate-900">
+                  {selected.name}
+                </div>
               </div>
               <div className="rounded-2xl bg-slate-50 p-4">
-                <div className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Contact</div>
-                <div className="mt-2 text-[14px] text-slate-900">{selected.phone || selected.email}</div>
+                <div className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                  Contact
+                </div>
+                <div className="mt-2 text-[14px] text-slate-900">
+                  {selected.phone || selected.email}
+                </div>
               </div>
             </div>
           </div>
         </div>
       )}
-
     </div>
   );
 }

@@ -1,0 +1,14 @@
+<svg width="240" height="180" viewBox="0 0 240 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">No data found</title>
+  <desc id="desc">An empty document tray with a search symbol.</desc>
+  <rect x="36" y="30" width="168" height="120" rx="18" fill="#F7F9FC"/>
+  <path d="M65 65C65 58.3726 70.3726 53 77 53H151L177 79V126C177 132.627 171.627 138 165 138H77C70.3726 138 65 132.627 65 126V65Z" fill="white" stroke="#D9E2EF" stroke-width="4"/>
+  <path d="M151 53V75C151 77.2091 152.791 79 155 79H177" fill="#EEF3FA"/>
+  <path d="M151 53V75C151 77.2091 152.791 79 155 79H177" stroke="#D9E2EF" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M85 90H131" stroke="#C8D3E1" stroke-width="6" stroke-linecap="round"/>
+  <path d="M85 111H116" stroke="#C8D3E1" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="150" cy="118" r="20" fill="#FFF8E8" stroke="#FFB21D" stroke-width="5"/>
+  <path d="M165 133L181 149" stroke="#061530" stroke-width="6" stroke-linecap="round"/>
+  <path d="M142 118H158" stroke="#FFB21D" stroke-width="5" stroke-linecap="round"/>
+  <path d="M41 150H199" stroke="#E8EEF6" stroke-width="5" stroke-linecap="round"/>
+</svg>

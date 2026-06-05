@@ -6,6 +6,7 @@ import { callApi } from "../../services/ApiService.js";
 import Pagination from "../common/Pagination.jsx";
 import instituteLogo from "../../assets/nite-logo.jpg";
 import Loader from "../common/Loader.jsx";
+import NoDataFound from "../common/NoDataFound.jsx";
 
 const ROLE_OPTIONS = [
   { label: "Teacher", value: "teacher" },
@@ -684,9 +685,6 @@ export default function StaffManagement() {
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h1 className="text-[24px] font-extrabold text-primary">Employee Management</h1>
-          <div className="mt-1 text-[13px] text-on-surface-variant">
-            {loading ? <Loader label="Loading employees..." /> : `${totalEmployees} employees found`}
-          </div>
         </div>
         <button
           type="button"
@@ -789,8 +787,8 @@ export default function StaffManagement() {
               )}
               {!loading && employees.length === 0 && (
                 <tr>
-                  <td className="px-4 py-8 text-center text-[13px] font-semibold text-on-surface-variant" colSpan={8}>
-                    No employees found.
+                  <td colSpan={8}>
+                    <NoDataFound title="No employees found" />
                   </td>
                 </tr>
               )}
