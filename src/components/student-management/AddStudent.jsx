@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { callApi } from "../../services/ApiService.js";
 import toast from "react-hot-toast";
 import Loader from "../common/Loader.jsx";
+import StudentResultModal from "./StudentResultModal.jsx";
 
 const initialForm = {
   name: "",
@@ -187,6 +188,17 @@ const getStudentForm = (student) => ({
   address: student.address || "",
 });
 
+const getStudentInitials = (name) => {
+  const initials = String(name || "")
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
+
+  return initials || "S";
+};
+
 export default function AddStudent() {
   const { studentId } = useParams();
   const navigate = useNavigate();
@@ -194,6 +206,8 @@ export default function AddStudent() {
   const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState({});
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showResultModal, setShowResultModal] = useState(false);
+  const [resultMarks, setResultMarks] = useState(["0", "0", "0", "0", "0"]);
   const [loading, setLoading] = useState(false);
   const [studentLoading, setStudentLoading] = useState(false);
   const [rollNumberLoading, setRollNumberLoading] = useState(false);
@@ -341,6 +355,33 @@ export default function AddStudent() {
     }
   };
 
+  const selectedCourse = courses.find((course) => String(course.id) === String(form.course));
+  const resultStudent = {
+    name: form.name,
+    rollNumber: form.rollNumber,
+    dob: form.session,
+    email: form.email,
+    phone: form.phone,
+    courseName: selectedCourse?.name || form.course,
+    admissionDate: form.admissionDate,
+    address: form.address,
+    photoUrl: profilePreview,
+    initials: getStudentInitials(form.name),
+  };
+
+  const updateResultMark = (index, value) => {
+    const nextValue = Number(value || 0);
+    const numericValue = Number.isFinite(nextValue) ? Math.max(0, Math.min(100, nextValue)) : 0;
+    setResultMarks((current) => current.map((mark, markIndex) => (
+      markIndex === index ? String(numericValue) : mark
+    )));
+  };
+
+  const publishResult = () => {
+    toast.success("Result published successfully.");
+    setShowResultModal(false);
+  };
+
   return (
     <div className="space-y-5">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
@@ -361,8 +402,18 @@ export default function AddStudent() {
 
       <form onSubmit={handleSubmit} noValidate className="overflow-hidden rounded-xl border border-outline-variant bg-white shadow-sm">
         <div className="grid gap-5 p-5 sm:grid-cols-2">
-          <div className="flex flex-col items-center text-center sm:col-span-2">
-            <label className="mb-3 block text-[12px] font-bold text-on-surface-variant">Profile Photo</label>
+          <div className="relative flex flex-col items-center text-center sm:col-span-2">
+            <div className="mb-3 flex w-full flex-col items-center gap-3 sm:min-h-[84px] sm:flex-row sm:items-start sm:justify-center">
+              <label className="block text-[12px] font-bold text-on-surface-variant sm:pt-2">Profile Photo</label>
+              <button
+                type="button"
+                onClick={() => setShowResultModal(true)}
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-[12px] font-bold text-on-primary shadow-sm transition-opacity hover:opacity-90 sm:absolute sm:right-0 sm:top-0"
+              >
+                <Save className="h-3.5 w-3.5" />
+                Generate Result
+              </button>
+            </div>
             <div className="mb-3 grid h-28 w-28 place-items-center overflow-hidden rounded-full border border-outline-variant bg-slate-50">
               {profilePreview ? (
                 <img src={profilePreview} alt="Profile preview" className="h-full w-full object-cover" />
@@ -599,6 +650,17 @@ export default function AddStudent() {
             </div>
           </div>
         </div>
+      )}
+
+      {showResultModal && (
+        <StudentResultModal
+          mode="generate"
+          student={resultStudent}
+          marks={resultMarks}
+          onMarksChange={updateResultMark}
+          onClose={() => setShowResultModal(false)}
+          onPublish={publishResult}
+        />
       )}
     </div>
   );

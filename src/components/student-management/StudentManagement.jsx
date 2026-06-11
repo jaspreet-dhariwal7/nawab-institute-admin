@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { Download, Edit, Eye, Plus, Search, X } from "lucide-react";
+import { Download, Edit, Eye, Plus, Save, Search, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import Pagination from "../common/Pagination.jsx";
 import { callApi } from "../../services/ApiService.js";
 import instituteLogo from "../../assets/nite-logo.jpg";
 import Loader from "../common/Loader.jsx";
 import NoDataFound from "../common/NoDataFound.jsx";
+import StudentResultModal from "./StudentResultModal.jsx";
 
 const getCourseName = (course) => {
   if (!course) return "";
@@ -596,6 +597,7 @@ const renderStudentRow = (student, setSelectedStudent) => {
 export default function StudentManagement() {
   const [search, setSearch] = useState("");
   const [selectedStudent, setSelectedStudent] = useState(null);
+  const [showResultModal, setShowResultModal] = useState(false);
   const [studentDetailLoading, setStudentDetailLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -675,6 +677,21 @@ export default function StudentManagement() {
       isActive = false;
     };
   }, [selectedStudent?.id]);
+
+  const resultStudent = selectedStudent
+    ? {
+        name: selectedStudent.name,
+        rollNumber: selectedStudent.rollNumber,
+        dob: selectedStudent.session,
+        email: selectedStudent.email,
+        phone: selectedStudent.phone,
+        courseName: selectedStudent.courseName,
+        admissionDate: selectedStudent.admissionDate,
+        address: selectedStudent.address,
+        photoUrl: selectedStudent.avatarUrl,
+        initials: getStudentInitials(selectedStudent.name),
+      }
+    : null;
 
   return (
     <div className="space-y-5">
@@ -768,8 +785,18 @@ export default function StudentManagement() {
             </div>
 
             <div className="grid gap-5 p-5 sm:grid-cols-2">
-              <div className="flex flex-col items-center text-center sm:col-span-2">
-                <label className="mb-3 block text-[12px] font-bold text-on-surface-variant">Profile Photo</label>
+              <div className="relative flex flex-col items-center text-center sm:col-span-2">
+                <div className="mb-3 flex w-full flex-col items-center gap-3 sm:min-h-[36px] sm:flex-row sm:items-start sm:justify-center">
+                  <label className="block text-[12px] font-bold text-on-surface-variant sm:pt-2">Profile Photo</label>
+                  <button
+                    type="button"
+                    onClick={() => setShowResultModal(true)}
+                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-[12px] font-bold text-on-primary shadow-sm transition-opacity hover:opacity-90 sm:absolute sm:right-0 sm:top-0"
+                  >
+                    <Save className="h-3.5 w-3.5" />
+                    View Result
+                  </button>
+                </div>
                 <div className="mb-3 grid h-28 w-28 place-items-center overflow-hidden rounded-full border border-outline-variant bg-slate-50 text-[26px] font-extrabold text-primary">
                   {selectedStudent.avatarUrl ? (
                     <img src={selectedStudent.avatarUrl} alt={selectedStudent.name} className="h-full w-full object-cover" />
@@ -797,6 +824,14 @@ export default function StudentManagement() {
             </div>
           </div>
         </div>
+      )}
+
+      {showResultModal && resultStudent && (
+        <StudentResultModal
+          mode="view"
+          student={resultStudent}
+          onClose={() => setShowResultModal(false)}
+        />
       )}
     </div>
   );
