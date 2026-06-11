@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { Download, Edit, Eye, Plus, Save, Search, X } from "lucide-react";
+import { AlertTriangle, Download, Edit, Eye, Plus, Save, Search, Trash2, X } from "lucide-react";
 import { Link } from "react-router-dom";
+import toast from "react-hot-toast";
 import Pagination from "../common/Pagination.jsx";
 import { callApi } from "../../services/ApiService.js";
 import instituteLogo from "../../assets/nite-logo.jpg";
@@ -549,7 +550,7 @@ const downloadStudentIdCard = async (student) => {
   link.click();
 };
 
-const renderStudentRow = (student, setSelectedStudent) => {
+const renderStudentRow = (student, setSelectedStudent, setStudentToDelete) => {
   const initials = getStudentInitials(student.name);
 
   return (
@@ -588,6 +589,14 @@ const renderStudentRow = (student, setSelectedStudent) => {
           >
             <Edit className="h-4 w-4" />
           </Link>
+          <button
+            type="button"
+            onClick={() => setStudentToDelete(student)}
+            className="grid h-8 w-8 place-items-center rounded-lg text-red-500 hover:bg-red-50"
+            aria-label="Delete student"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
         </div>
       </td>
     </tr>
@@ -597,8 +606,10 @@ const renderStudentRow = (student, setSelectedStudent) => {
 export default function StudentManagement() {
   const [search, setSearch] = useState("");
   const [selectedStudent, setSelectedStudent] = useState(null);
+  const [studentToDelete, setStudentToDelete] = useState(null);
   const [showResultModal, setShowResultModal] = useState(false);
   const [studentDetailLoading, setStudentDetailLoading] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [students, setStudents] = useState([]);
@@ -690,8 +701,34 @@ export default function StudentManagement() {
         address: selectedStudent.address,
         photoUrl: selectedStudent.avatarUrl,
         initials: getStudentInitials(selectedStudent.name),
-      }
+    }
     : null;
+
+  const closeDeleteModal = () => {
+    if (!deleting) {
+      setStudentToDelete(null);
+    }
+  };
+
+  const confirmDeleteStudent = async () => {
+    if (!studentToDelete) return;
+
+    try {
+      setDeleting(true);
+      await callApi({
+        url: `/students/${studentToDelete.id}/`,
+        method: "delete",
+      });
+
+      setStudents((currentStudents) => currentStudents.filter((student) => student.id !== studentToDelete.id));
+      setTotalStudents((currentTotal) => Math.max(currentTotal - 1, 0));
+      setSelectedStudent((current) => (current?.id === studentToDelete.id ? null : current));
+      toast.success("Student deleted successfully.");
+      setStudentToDelete(null);
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
     <div className="space-y-5">
@@ -744,7 +781,7 @@ export default function StudentManagement() {
                   </td>
                 </tr>
               ) : (
-                  students.map((student) => renderStudentRow(student, setSelectedStudent))
+                  students.map((student) => renderStudentRow(student, setSelectedStudent, setStudentToDelete))
               )}
               {!loading && students.length === 0 && (
                 <tr>
@@ -821,6 +858,42 @@ export default function StudentManagement() {
               <DocumentPreview label="Highest Qualification" url={selectedStudent.highestQualificationUrl} />
 
               <StudentIdCardPreview student={selectedStudent} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {studentToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="flex items-start gap-3">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-red-50 text-red-600">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-[18px] font-extrabold text-slate-900">Delete Student</h2>
+                <p className="mt-2 text-[13px] leading-5 text-slate-600">
+                  Are you sure you want to delete <span className="font-bold text-slate-900">{studentToDelete.name || "this student"}</span>? This action cannot be undone.
+                </p>
+              </div>
+            </div>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={closeDeleteModal}
+                disabled={deleting}
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-[13px] font-semibold text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteStudent}
+                disabled={deleting}
+                className="rounded-lg bg-red-600 px-4 py-2.5 text-[13px] font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {deleting ? <Loader variant="button" label="Deleting..." /> : "Delete"}
+              </button>
             </div>
           </div>
         </div>

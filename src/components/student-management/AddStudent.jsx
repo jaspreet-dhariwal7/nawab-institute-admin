@@ -199,6 +199,34 @@ const getStudentInitials = (name) => {
   return initials || "S";
 };
 
+const getExistingFileLabel = (url, fallback) => {
+  const fileName = getFileNameFromUrl(url);
+  return fileName || fallback;
+};
+
+const FilePicker = ({ accept, error, existingLabel, file, onChange, widthClass = "w-full" }) => {
+  const displayName = file?.name || existingLabel || "No file selected";
+
+  return (
+    <label
+      className={`flex min-h-[42px] cursor-pointer items-center overflow-hidden rounded-lg border bg-white text-[13px] outline-none transition-colors focus-within:border-primary ${widthClass} ${error ? "border-red-500" : "border-outline-variant"}`}
+    >
+      <span className="mx-3 inline-flex shrink-0 items-center rounded-lg bg-primary px-3 py-1.5 text-[12px] font-bold text-white">
+        Choose File
+      </span>
+      <span className="min-w-0 flex-1 truncate pr-3 text-left font-medium text-slate-600">
+        {displayName}
+      </span>
+      <input
+        type="file"
+        accept={accept}
+        onChange={(event) => onChange(event.target.files?.[0] || null)}
+        className="sr-only"
+      />
+    </label>
+  );
+};
+
 export default function AddStudent() {
   const { studentId } = useParams();
   const navigate = useNavigate();
@@ -421,13 +449,13 @@ export default function AddStudent() {
                 <span className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Photo</span>
               )}
             </div>
-            <input
-              type="file"
+            <FilePicker
               accept="image/*"
-              onChange={(event) => updateField("profilePhoto", event.target.files?.[0] || null)}
-              className="w-full max-w-sm rounded-lg border border-outline-variant px-3.5 py-2.5 text-[13px] outline-none file:mr-3 file:rounded-lg file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-[12px] file:font-bold file:text-white focus:border-primary"
+              file={form.profilePhoto}
+              existingLabel={form.profilePhotoUrl ? getExistingFileLabel(form.profilePhotoUrl, "Existing profile photo uploaded") : ""}
+              onChange={(file) => updateField("profilePhoto", file)}
+              widthClass="w-full max-w-sm"
             />
-            {form.profilePhoto && <p className="mt-1 text-[11px] font-semibold text-on-surface-variant">{form.profilePhoto.name}</p>}
           </div>
 
         
@@ -488,7 +516,7 @@ export default function AddStudent() {
               required
               value={form.course}
               onChange={(event) => updateField("course", event.target.value)}
-              className={`w-full rounded-lg border bg-white px-3.5 py-2.5 text-[13px] outline-none focus:border-primary ${errors.course ? "border-red-500 focus:border-red-500" : "border-outline-variant"}`}
+              className={`h-[42px] w-full rounded-lg border bg-white px-3.5 text-[13px] outline-none focus:border-primary ${errors.course ? "border-red-500 focus:border-red-500" : "border-outline-variant"}`}
             >
               <option value="">Select course</option>
               {courses.map((course) => (
@@ -570,13 +598,13 @@ export default function AddStudent() {
                 <span className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Upload file</span>
               )}
             </div>
-            <input
-              type="file"
+            <FilePicker
               accept=".pdf,.jpg,.jpeg,.png"
-              onChange={(event) => updateField("idProof", event.target.files?.[0] || null)}
-              className={`w-full rounded-lg border px-3.5 py-2.5 text-[13px] outline-none file:mr-3 file:rounded-lg file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-[12px] file:font-bold file:text-white focus:border-primary ${errors.idProof ? "border-red-500" : "border-outline-variant"}`}
+              error={errors.idProof}
+              file={form.idProof}
+              existingLabel={form.idProofUrl ? getExistingFileLabel(form.idProofUrl, "Existing ID proof uploaded") : ""}
+              onChange={(file) => updateField("idProof", file)}
             />
-            {form.idProof && <p className="mt-1 text-[11px] font-semibold text-on-surface-variant">{form.idProof.name}</p>}
             {errors.idProof && <p className="mt-1 text-[11px] text-red-600">{errors.idProof}</p>}
           </div>
 
@@ -594,13 +622,13 @@ export default function AddStudent() {
                 <span className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Upload file</span>
               )}
             </div>
-            <input
-              type="file"
+            <FilePicker
               accept=".pdf,.jpg,.jpeg,.png"
-              onChange={(event) => updateField("highestQualification", event.target.files?.[0] || null)}
-              className={`w-full rounded-lg border px-3.5 py-2.5 text-[13px] outline-none file:mr-3 file:rounded-lg file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-[12px] file:font-bold file:text-white focus:border-primary ${errors.highestQualification ? "border-red-500" : "border-outline-variant"}`}
+              error={errors.highestQualification}
+              file={form.highestQualification}
+              existingLabel={form.highestQualificationUrl ? getExistingFileLabel(form.highestQualificationUrl, "Existing qualification uploaded") : ""}
+              onChange={(file) => updateField("highestQualification", file)}
             />
-            {form.highestQualification && <p className="mt-1 text-[11px] font-semibold text-on-surface-variant">{form.highestQualification.name}</p>}
             {errors.highestQualification && <p className="mt-1 text-[11px] text-red-600">{errors.highestQualification}</p>}
           </div>
 
