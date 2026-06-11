@@ -99,7 +99,7 @@ export default function StudentResultModal({ mode = "generate", student, marks, 
                   <th className="w-16 px-5 py-4 text-[13px] font-extrabold text-slate-600">#</th>
                   <th className="px-5 py-4 text-[13px] font-extrabold text-slate-600">Subject Name</th>
                   <th className="w-40 px-5 py-4 text-center text-[13px] font-extrabold text-slate-600">Total Marks</th>
-                  <th className="w-72 px-5 py-4 text-[13px] font-extrabold text-slate-600">Obtained Marks (Out of 100)</th>
+                  <th className="w-72 px-5 py-4 text-center text-[13px] font-extrabold text-slate-600">Obtained Marks</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant">
@@ -108,7 +108,7 @@ export default function StudentResultModal({ mode = "generate", student, marks, 
                     <td className="px-5 py-4 text-[14px] font-semibold text-primary">{index + 1}</td>
                     <td className="px-5 py-4 text-[14px] font-semibold text-primary">{subject}</td>
                     <td className="px-5 py-4 text-center text-[14px] font-semibold text-primary">100</td>
-                    <td className="px-5 py-3 text-[14px] font-semibold text-primary">
+                    <td className="px-5 py-3 text-center text-[14px] font-semibold text-primary">
                       {isGenerate ? (
                         <input
                           type="number"
