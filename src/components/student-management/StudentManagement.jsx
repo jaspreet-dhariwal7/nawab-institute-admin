@@ -21,6 +21,7 @@ const normalizeStudent = (student) => ({
     rollNumber: student.roll_number || student.rollNumber || "",
     courseName: student.course_title || student.course_name || getCourseName(student.course),
     admissionDate: student.admission_date || student.admissionDate || "",
+    session: student.session || student.dob || student.date_of_birth || student.dateOfBirth || "",
     guardianName: student.guardian_name || student.guardianName || student.father_name || student.fatherName || "",
     guardianPhone: student.guardian_phone || student.guardianPhone || "",
     fatherName: student.father_name || student.fatherName || student.guardian_name || student.guardianName || "",
@@ -115,204 +116,427 @@ const DocumentPreview = ({ label, url }) => (
   </div>
 );
 
-const StudentIdCardPreview = ({ student }) => (
-  <div className="sm:col-span-2">
-    <div className="mb-3 flex items-center justify-between gap-3">
-      <h4 className="text-[14px] font-extrabold text-primary">ID Card</h4>
-      <button
-        onClick={() => downloadStudentIdCard(student)}
-        className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-[11px] font-bold uppercase tracking-wider text-on-primary transition-opacity hover:opacity-90"
-      >
-        <Download className="h-4 w-4" />
-        Download
-      </button>
-    </div>
-    <div className="mx-auto w-full max-w-[280px] overflow-hidden rounded-xl border border-outline-variant bg-white shadow-sm">
-      <div className="bg-primary px-3.5 py-3.5 text-on-primary">
-        <div className="flex items-center gap-3">
-          <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full bg-white">
-            <img src={instituteLogo} alt="Institute logo" className="h-8 w-8 object-contain" />
-          </div>
-          <div>
-            <div className="text-[15px] font-extrabold leading-tight">NITE</div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-white/80">Student ID Card</div>
-          </div>
-        </div>
-      </div>
-      <div className="px-4 py-4">
-        <div className="mb-4 flex justify-center">
-          <div className="grid h-24 w-24 place-items-center overflow-hidden rounded-full bg-slate-100 text-[24px] font-extrabold text-primary">
-            {student.avatarUrl ? (
-              <img src={student.avatarUrl} alt={student.name} className="h-full w-full object-cover" />
-            ) : (
-              getStudentInitials(student.name)
-            )}
-          </div>
-        </div>
-        <div className="mb-4 text-center">
-          <div className="text-[16px] font-extrabold text-slate-900">{student.name || "-"}</div>
-          <div className="mt-1 text-[10px] font-bold text-slate-500">{student.courseName || "-"}</div>
-        </div>
-        <div className="space-y-2.5">
-          {[
-            { label: "Father Name", value: student.fatherName },
-            { label: "Phone Number", value: student.phone },
-            { label: "Roll No.", value: student.rollNumber },
-            // { label: "Address", value: student.address },
-          ].map((item) => (
-            <div key={item.label} className="rounded-lg bg-slate-50 p-2.5">
-              <div className="mb-1 text-[10px] font-bold uppercase tracking-wide text-slate-400">{item.label}</div>
-              <div className="break-words text-[12px] font-semibold text-slate-800">{item.value || "-"}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  </div>
-);
+const STUDENT_ID_CARD_EXPORT_WIDTH = 540;
+const STUDENT_ID_CARD_EXPORT_HEIGHT = 860;
+const STUDENT_ID_CARD_PREVIEW_WIDTH = 420;
+const STUDENT_ID_CARD_PREVIEW_HEIGHT =
+  (STUDENT_ID_CARD_PREVIEW_WIDTH * STUDENT_ID_CARD_EXPORT_HEIGHT) / STUDENT_ID_CARD_EXPORT_WIDTH;
 
-const loadCardImage = (src) =>
-  new Promise((resolve, reject) => {
-    if (!src) {
-      reject(new Error("Missing image source"));
-      return;
-    }
+const StudentIdCardPreview = ({ student }) => {
+  const topDetails = [
+    ["Student Name", student.name],
+    ["Course", student.courseName],
+    // ["Session", "2026"],
+    ["Roll Number", student.rollNumber],
+  ];
 
-    const image = new Image();
-    image.crossOrigin = "anonymous";
-    image.onload = () => resolve(image);
-    image.onerror = reject;
-    image.src = src;
-  });
-
-const drawWrappedText = (context, text, x, y, maxWidth, lineHeight, maxLines = 2) => {
-  const words = String(text || "").split(" ").filter(Boolean);
-  const lines = [];
-  let currentLine = "";
-
-  words.forEach((word) => {
-    const nextLine = currentLine ? `${currentLine} ${word}` : word;
-    if (context.measureText(nextLine).width <= maxWidth || !currentLine) {
-      currentLine = nextLine;
-      return;
-    }
-
-    lines.push(currentLine);
-    currentLine = word;
-  });
-
-  if (currentLine) lines.push(currentLine);
-
-  lines.slice(0, maxLines).forEach((line, index) => {
-    const visibleLine = index === maxLines - 1 && lines.length > maxLines ? `${line.replace(/\.+$/, "")}...` : line;
-    context.fillText(visibleLine, x, y + index * lineHeight);
-  });
-};
-
-const drawRoundImage = (context, image, x, y, size) => {
-  context.save();
-  context.beginPath();
-  context.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2);
-  context.clip();
-  context.drawImage(image, x, y, size, size);
-  context.restore();
-};
-
-const downloadStudentIdCard = async (student) => {
-  const canvas = document.createElement("canvas");
-  const scale = 2;
-  const width = 360;
-  const height = 560;
-  canvas.width = width * scale;
-  canvas.height = height * scale;
-
-  const context = canvas.getContext("2d");
-  context.scale(scale, scale);
-  context.fillStyle = "#f8fafc";
-  context.fillRect(0, 0, width, height);
-
-  context.fillStyle = "#ffffff";
-  context.strokeStyle = "#dbe3ee";
-  context.lineWidth = 1;
-  context.beginPath();
-  context.roundRect(18, 18, 324, 524, 18);
-  context.fill();
-  context.stroke();
-
-  context.fillStyle = "#0f3b66";
-  context.beginPath();
-  context.roundRect(18, 18, 324, 96, 18);
-  context.fill();
-  context.fillRect(18, 82, 324, 32);
-
-  try {
-    const logo = await loadCardImage(instituteLogo);
-    context.fillStyle = "#ffffff";
-    context.beginPath();
-    context.arc(62, 66, 28, 0, Math.PI * 2);
-    context.fill();
-    drawRoundImage(context, logo, 38, 42, 48);
-  } catch {
-    context.fillStyle = "#ffffff";
-    context.beginPath();
-    context.arc(62, 66, 28, 0, Math.PI * 2);
-    context.fill();
-    context.fillStyle = "#0f3b66";
-    context.font = "700 15px Arial";
-    context.textAlign = "center";
-    context.fillText("NITE", 62, 71);
-  }
-
-  context.textAlign = "left";
-  context.fillStyle = "#ffffff";
-  context.font = "800 20px Arial";
-  context.fillText("NITE", 102, 58);
-  context.font = "700 11px Arial";
-  context.fillText("STUDENT ID CARD", 102, 79);
-
-  context.fillStyle = "#eef6ff";
-  context.beginPath();
-  context.roundRect(120, 138, 120, 120, 60);
-  context.fill();
-
-  try {
-    const photo = await loadCardImage(student.avatarUrl);
-    drawRoundImage(context, photo, 120, 138, 120);
-  } catch {
-    context.fillStyle = "#0f3b66";
-    context.font = "800 34px Arial";
-    context.textAlign = "center";
-    context.fillText(getStudentInitials(student.name), 180, 209);
-  }
-
-  context.textAlign = "center";
-  context.fillStyle = "#0f172a";
-  context.font = "800 21px Arial";
-  drawWrappedText(context, student.name || "Student", 180, 294, 250, 22, 2);
-
-  context.fillStyle = "#64748b";
-  context.font = "700 13px Arial";
-  drawWrappedText(context, student.courseName || "-", 180, 338, 260, 16, 2);
-
-  const fields = [
-    ["Father Name", student.fatherName],
-    ["Phone Number", student.phone],
-    ["Roll No.", student.rollNumber],
+  const infoRows = [
+    // ["Father Name", student.fatherName],
+    ["DOB", formatDate(student.session)],
+    // ["Gender", "Male"],
+    // ["Blood Group", "B+"],
+    ["Phone", student.phone],
+    ["Email", student.email],
     ["Address", student.address],
   ];
 
-  context.textAlign = "left";
-  let y = 374;
-  fields.forEach(([label, value]) => {
-    context.fillStyle = "#64748b";
-    context.font = "700 10px Arial";
-    context.fillText(label.toUpperCase(), 44, y);
-    context.fillStyle = "#111827";
-    context.font = "700 14px Arial";
-    drawWrappedText(context, value || "-", 44, y + 20, 272, 18, label === "Address" ? 3 : 1);
-    y += label === "Address" ? 74 : 54;
+  return (
+    <div className="sm:col-span-2">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h4 className="text-[14px] font-extrabold text-primary">ID Card</h4>
+        <button
+          onClick={() => downloadStudentIdCard(student)}
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-[11px] font-bold uppercase tracking-wider text-on-primary transition-opacity hover:opacity-90"
+        >
+          <Download className="h-4 w-4" />
+          Download
+        </button>
+      </div>
+
+      <div
+        className="mx-auto flex w-full flex-col overflow-hidden rounded-[26px] border border-[#d59a21]/40 bg-white shadow-xl"
+        style={{
+          maxWidth: `${STUDENT_ID_CARD_PREVIEW_WIDTH}px`,
+          minHeight: `${STUDENT_ID_CARD_PREVIEW_HEIGHT}px`,
+          aspectRatio: `${STUDENT_ID_CARD_EXPORT_WIDTH} / ${STUDENT_ID_CARD_EXPORT_HEIGHT}`,
+        }}
+      >
+        <div className="relative shrink-0 bg-[#082d61] px-6 pb-7 pt-5 text-white">
+          <div className="absolute inset-x-0 bottom-0 h-2 bg-[#d59a21]" />
+          <div className="relative flex items-center gap-4">
+            <div className="grid h-24 w-24 shrink-0 place-items-center rounded-full border-4 border-[#d59a21] bg-white p-2 shadow-md">
+              <img src={instituteLogo} alt="Institute logo" className="h-full w-full object-contain rounded-2xl" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-[38px] font-black leading-none tracking-[0.2em]">NITE</h2>
+              <p className="mt-2 text-[11px] font-bold uppercase leading-tight tracking-wide text-[#f4d28b]">
+                Nawab Institute Of Technical Education
+              </p>
+            </div>
+          </div>
+        </div>
+          <div className="relative mt-5 flex shrink-0 items-center gap-3">
+            <span className="h-px flex-1 bg-[#d59a21]" />
+            <span className="rounded-lg bg-primary px-5 py-2 text-[16px] font-black uppercase tracking-wide text-white shadow-sm">
+              Student ID Card
+            </span>
+            <span className="h-px flex-1 bg-[#d59a21]" />
+          </div>
+
+        <div className="relative flex flex-1 flex-col px-5 py-5">
+          <img
+            src={instituteLogo}
+            alt=""
+            aria-hidden="true"
+            className="pointer-events-none absolute bottom-12 right-2 h-44 w-44 object-contain opacity-[0.05]"
+          />
+
+          <div className="relative grid grid-cols-[132px_1fr] gap-4">
+            <div>
+              {student.avatarUrl ? (
+                <img
+                  src={student.avatarUrl}
+                  alt={student.name}
+                  className="h-[172px] w-[132px] rounded-xl border-2 border-[#d59a21] object-cover shadow-sm"
+                />
+              ) : (
+                <div className="grid h-[172px] w-[132px] place-items-center rounded-xl border-2 border-[#d59a21] bg-[#f5f8fc] text-[34px] font-black text-[#082d61] shadow-sm">
+                  {getStudentInitials(student.name)}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              {topDetails.map(([label, value]) => (
+                <div key={label}>
+                  <p className="text-[10px] font-black uppercase tracking-wide text-[#082d61]">{label}</p>
+                  <p className="mt-0.5 break-words text-[13px] font-extrabold leading-snug text-slate-900">{value || "-"}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="relative my-5 flex items-center gap-3">
+            <span className="h-px flex-1 bg-[#d59a21]" />
+            <span className="h-3 w-3 rotate-45 bg-[#d59a21]" />
+            <span className="h-px flex-1 bg-[#d59a21]" />
+          </div>
+
+          <div className="relative space-y-0">
+            {infoRows.map(([label, value]) => (
+              <div
+                key={label}
+                className="grid grid-cols-[96px_10px_1fr] items-start rounded-lg px-3 py-1 text-[12px] leading-tight"
+              >
+                <span className="font-black uppercase text-[#082d61]">{label}</span>
+                <span className="font-black text-[#082d61]">:</span>
+                <span className="break-words font-semibold text-slate-900">{value || "-"}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="relative mt-auto flex justify-end pt-8">
+            <div className="w-44 text-center">
+              <div className="border-t border-slate-800" />
+              <p className="mt-2 text-[12px] font-bold text-slate-900">Authorized Signature</p>
+              <p className="text-[10px] font-semibold text-slate-500">(Director / Principal)</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="h-8 shrink-0 bg-[#082d61]">
+          <div className="h-2 bg-[#d59a21]" />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const downloadStudentIdCard = async (student) => {
+  const width = 420;
+  const outputWidth = STUDENT_ID_CARD_EXPORT_WIDTH;
+  const outputHeight = STUDENT_ID_CARD_EXPORT_HEIGHT;
+  const scale = outputWidth / width;
+  const height = outputHeight / scale;
+  const canvas = document.createElement("canvas");
+  canvas.width = outputWidth;
+  canvas.height = outputHeight;
+  const ctx = canvas.getContext("2d");
+  ctx.scale(scale, scale);
+
+  const navy = "#082d61";
+  const gold = "#d59a21";
+  const cardBg = "#ffffff";
+  const white = "#ffffff";
+  const slate900 = "#0f172a";
+  const slate500 = "#64748b";
+
+  // ── helpers ──────────────────────────────────────────
+  const roundRect = (x, y, w, h, r) => {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  };
+
+  const loadImg = (src) =>
+    new Promise((res, rej) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => res(img);
+      img.onerror = rej;
+      img.src = src;
+    });
+
+  const drawCircleClippedImage = (img, cx, cy, r, padding = 0) => {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.drawImage(img, cx - r + padding, cy - r + padding, (r - padding) * 2, (r - padding) * 2);
+    ctx.restore();
+  };
+
+  const drawRoundedImage = (img, x, y, w, h, r) => {
+    ctx.save();
+    roundRect(x, y, w, h, r);
+    ctx.clip();
+    ctx.drawImage(img, x, y, w, h);
+    ctx.restore();
+  };
+
+  const wrapText = (text, x, y, maxWidth, lineHeight, maxLines = 99) => {
+    const words = String(text || "-").split(" ");
+    let line = "";
+    let lineCount = 0;
+    for (let i = 0; i < words.length; i++) {
+      const test = line + words[i] + " ";
+      if (ctx.measureText(test).width > maxWidth && i > 0) {
+        if (lineCount >= maxLines - 1) {
+          ctx.fillText(line.trimEnd() + "…", x, y);
+          return;
+        }
+        ctx.fillText(line.trimEnd(), x, y);
+        line = words[i] + " ";
+        y += lineHeight;
+        lineCount++;
+      } else {
+        line = test;
+      }
+    }
+    ctx.fillText(line.trimEnd(), x, y);
+  };
+
+  const logo = await loadImg(instituteLogo).catch(() => null);
+
+  // ── card background ───────────────────────────────────
+  ctx.fillStyle = cardBg;
+  roundRect(0, 0, width, height, 26);
+  ctx.fill();
+
+  // ── navy header ───────────────────────────────────────
+  const headerH = 140;
+  ctx.save();
+  roundRect(0, 0, width, height, 26);
+  ctx.clip();
+  ctx.fillStyle = navy;
+  ctx.fillRect(0, 0, width, headerH);
+  ctx.fillStyle = gold;
+  ctx.fillRect(0, headerH - 8, width, 8);
+  ctx.restore();
+
+  // ── logo circle ───────────────────────────────────────
+  const logoCX = 72, logoCY = 68, logoR = 48;
+  ctx.beginPath();
+  ctx.arc(logoCX, logoCY, logoR, 0, Math.PI * 2);
+  ctx.fillStyle = gold;
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(logoCX, logoCY, logoR - 4, 0, Math.PI * 2);
+  ctx.fillStyle = white;
+  ctx.fill();
+  if (logo) {
+    drawCircleClippedImage(logo, logoCX, logoCY, logoR - 8, 8);
+  } else {
+    ctx.fillStyle = navy;
+    ctx.font = "bold 13px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText("NITE", logoCX, logoCY + 5);
+  }
+
+  // ── institute name ────────────────────────────────────
+  ctx.textAlign = "left";
+  ctx.fillStyle = white;
+  ctx.font = "900 38px Arial";
+  ctx.fillText("NITE", 134, 68);
+  ctx.fillStyle = "#f4d28b";
+  ctx.font = "700 11px Arial";
+  wrapText("NAWAB INSTITUTE OF TECHNICAL EDUCATION", 134, 92, 230, 13, 2);
+
+  // ── Student ID Card badge ─────────────────────────────
+  const badgeY = 166;
+  // left line
+  ctx.strokeStyle = gold;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(24, badgeY + 10);
+  ctx.lineTo(125, badgeY + 10);
+  ctx.stroke();
+  // badge rect
+  ctx.fillStyle = navy;
+  roundRect(125, badgeY - 2, 170, 28, 8);
+  ctx.fill();
+  ctx.fillStyle = white;
+  ctx.font = "900 13px Arial";
+  ctx.textAlign = "center";
+  ctx.fillText("STUDENT ID CARD", 210, badgeY + 17);
+  // right line
+  ctx.strokeStyle = gold;
+  ctx.beginPath();
+  ctx.moveTo(295, badgeY + 10);
+  ctx.lineTo(396, badgeY + 10);
+  ctx.stroke();
+
+  if (logo) {
+    ctx.save();
+    ctx.globalAlpha = 0.05;
+    ctx.drawImage(logo, 252, 368, 176, 176);
+    ctx.restore();
+  }
+
+  // ── photo ─────────────────────────────────────────────
+  const photoX = 20, photoY = 215, photoW = 132, photoH = 172;
+  ctx.fillStyle = gold;
+  roundRect(photoX - 2, photoY - 2, photoW + 4, photoH + 4, 12);
+  ctx.fill();
+  if (student.avatarUrl) {
+    try {
+      const photo = await loadImg(student.avatarUrl);
+      drawRoundedImage(photo, photoX, photoY, photoW, photoH, 10);
+    } catch {
+      ctx.fillStyle = "#f5f8fc";
+      roundRect(photoX, photoY, photoW, photoH, 10);
+      ctx.fill();
+      ctx.fillStyle = navy;
+      ctx.font = "900 34px Arial";
+      ctx.textAlign = "center";
+      ctx.fillText(getStudentInitials(student.name), photoX + photoW / 2, photoY + photoH / 2 + 12);
+    }
+  } else {
+    ctx.fillStyle = "#f5f8fc";
+    roundRect(photoX, photoY, photoW, photoH, 10);
+    ctx.fill();
+    ctx.fillStyle = navy;
+    ctx.font = "900 34px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(getStudentInitials(student.name), photoX + photoW / 2, photoY + photoH / 2 + 12);
+  }
+
+  // ── top detail fields ─────────────────────────────────
+  const topDetails = [
+    ["Student Name", student.name],
+    ["Course", student.courseName],
+    ["Roll Number", student.rollNumber],
+  ];
+  const detailX = 168;
+  let detailY = 224;
+  topDetails.forEach(([label, value]) => {
+    ctx.fillStyle = navy;
+    ctx.font = "900 10px Arial";
+    ctx.textAlign = "left";
+    ctx.fillText(label.toUpperCase(), detailX, detailY);
+    ctx.fillStyle = slate900;
+    ctx.font = "800 13px Arial";
+    wrapText(value || "-", detailX, detailY + 16, 220, 15, label === "Course" ? 2 : 1);
+    detailY += label === "Course" ? 48 : 42;
   });
 
+  // ── divider ───────────────────────────────────────────
+  const divY = 410;
+  ctx.strokeStyle = gold;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(20, divY);
+  ctx.lineTo(190, divY);
+  ctx.stroke();
+  // diamond
+  ctx.save();
+  ctx.translate(210, divY);
+  ctx.rotate(Math.PI / 4);
+  ctx.fillStyle = gold;
+  ctx.fillRect(-5, -5, 10, 10);
+  ctx.restore();
+  ctx.beginPath();
+  ctx.moveTo(230, divY);
+  ctx.lineTo(400, divY);
+  ctx.stroke();
+
+  // ── info rows ─────────────────────────────────────────
+  const infoRows = [
+    ["DOB", formatDate(student.session)],
+    ["Phone", student.phone],
+    ["Email", student.email],
+    ["Address", student.address],
+  ];
+  let infoY = divY + 24;
+  infoRows.forEach(([label, value]) => {
+
+    ctx.fillStyle = navy;
+    ctx.font = "900 10px Arial";
+    ctx.textAlign = "left";
+    ctx.fillText(label.toUpperCase(), 32, infoY);
+
+    ctx.fillStyle = navy;
+    ctx.font = "900 10px Arial";
+    ctx.fillText(":", 132, infoY);
+
+    ctx.fillStyle = slate900;
+    ctx.font = "700 12px Arial";
+    wrapText(value || "-", 148, infoY, 240, 14, label === "Address" ? 2 : 1);
+
+    infoY += label === "Address" ? 27 : 19;
+  });
+
+  // ── signature ─────────────────────────────────────────
+  const sigY = 548;
+  ctx.strokeStyle = slate900;
+  ctx.lineWidth = 0.8;
+  ctx.beginPath();
+  ctx.moveTo(244, sigY);
+  ctx.lineTo(396, sigY);
+  ctx.stroke();
+  ctx.fillStyle = slate900;
+  ctx.font = "700 12px Arial";
+  ctx.textAlign = "center";
+  ctx.fillText("Authorized Signature", 320, sigY + 18);
+  ctx.fillStyle = slate500;
+  ctx.font = "600 10px Arial";
+  ctx.fillText("(Director / Principal)", 320, sigY + 32);
+
+  // ── footer ────────────────────────────────────────────
+  ctx.save();
+  roundRect(0, 0, width, height, 26);
+  ctx.clip();
+  ctx.fillStyle = navy;
+  ctx.fillRect(0, height - 32, width, 32);
+  ctx.fillStyle = gold;
+  ctx.fillRect(0, height - 32, width, 8);
+  ctx.restore();
+
+  // ── card border ───────────────────────────────────────
+  ctx.strokeStyle = gold + "66";
+  ctx.lineWidth = 1.5;
+  roundRect(0, 0, width, height, 26);
+  ctx.stroke();
+
+  // ── download ─────────────────────────────────────────
   const fileName = `id-card-${String(student.rollNumber || student.name || "student")
     .trim()
     .replace(/[^a-z0-9]+/gi, "-")
@@ -561,13 +785,14 @@ export default function StudentManagement() {
               <DetailField label="Phone" value={selectedStudent.phone} />
               <DetailField label="Course" value={selectedStudent.courseName} />
               <DetailField label="Admission Date" value={formatDate(selectedStudent.admissionDate)} />
+              <DetailField label="DOB" value={formatDate(selectedStudent.session)} />
               <DetailField label="Guardian Name" value={selectedStudent.guardianName} />
               <DetailField label="Guardian Phone" value={selectedStudent.guardianPhone} />
+              <DetailField label="Address" value={selectedStudent.address} />
 
               <DocumentPreview label="ID Proof" url={selectedStudent.idProofUrl} />
               <DocumentPreview label="Highest Qualification" url={selectedStudent.highestQualificationUrl} />
 
-              <DetailField label="Address" value={selectedStudent.address} className="sm:col-span-2" />
               <StudentIdCardPreview student={selectedStudent} />
             </div>
           </div>

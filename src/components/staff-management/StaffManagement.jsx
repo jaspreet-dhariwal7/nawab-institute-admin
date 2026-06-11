@@ -216,55 +216,105 @@ const EmployeeDetailField = ({ label, value, className = "" }) => (
   </div>
 );
 
-const EmployeeIdCardPreview = ({ employee, detailLoading }) => (
-  <div className="sm:col-span-2">
-    <div className="mb-3 flex items-center justify-between gap-3">
-      <h4 className="text-[14px] font-extrabold text-primary">Employee ID Card</h4>
-      <button
-        type="button"
-        onClick={() => downloadEmployeeIdCard(employee)}
-        className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-[11px] font-bold uppercase tracking-wider text-on-primary transition-opacity hover:opacity-90"
-      >
-        <Download className="h-4 w-4" />
-        Download
-      </button>
-    </div>
-    <div className="mx-auto w-full max-w-[280px] overflow-hidden rounded-xl border border-outline-variant bg-white shadow-sm">
-      <div className="bg-primary px-3.5 py-3.5 text-on-primary">
-        <div className="flex items-center gap-3">
-          <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full bg-white">
-            <img src={instituteLogo} alt="Institute logo" className="h-8 w-8 object-contain" />
-          </div>
-          <div>
-            <div className="text-[15px] font-extrabold leading-tight">NITE</div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-white/80">Employee ID Card</div>
-          </div>
-        </div>
+const EmployeeIdCardPreview = ({ employee }) => {
+  const infoRows = [
+    ["Name", employee.name],
+    ["Email", employee.email],
+    ["Phone Number", employee.phone],
+    ["Designation", employee.roleLabel],
+    ["Department", employee.departmentLabel],
+  ];
+
+  return (
+    <div className="sm:col-span-2">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h4 className="text-[14px] font-extrabold text-primary">Employee ID Card</h4>
+        <button
+          type="button"
+          onClick={() => downloadEmployeeIdCard(employee)}
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-[11px] font-bold uppercase tracking-wider text-on-primary transition-opacity hover:opacity-90"
+        >
+          <Download className="h-4 w-4" />
+          Download
+        </button>
       </div>
-      <div className="px-4 py-4">
-        <div className="mb-4 flex justify-center">
-          {renderEmployeeAvatar(employee, "h-24 w-24", "text-[24px]")}
-        </div>
-        <div className="mb-4 text-center">
-          <div className="text-[16px] font-extrabold text-slate-900">{employee.name || "-"}</div>
-          {detailLoading && <Loader label="Loading complete details..." size="xs" className="mt-1 justify-center" labelClassName="text-[11px] text-slate-400" />}
-        </div>
-        <div className="space-y-2.5">
-          {[
-            { label: "Phone Number", value: employee.phone },
-            { label: "Employee ID", value: employee.employeeId },
-            { label: "Designation / Department", value: [employee.roleLabel, employee.departmentLabel].filter(Boolean).join(" / ") },
-          ].map((item) => (
-            <div key={item.label} className="rounded-lg bg-slate-50 p-2.5">
-              <div className="mb-1 text-[10px] font-bold uppercase tracking-wide text-slate-400">{item.label}</div>
-              <div className="break-words text-[12px] font-semibold text-slate-800">{item.value || "-"}</div>
+
+      <div className="mx-auto w-full max-w-[420px] overflow-hidden rounded-[26px] border border-[#d59a21]/40 bg-white shadow-xl">
+        <div className="relative bg-[#082d61] px-6 pb-7 pt-5 text-white">
+          <div className="absolute inset-x-0 bottom-0 h-2 bg-[#d59a21]" />
+          <div className="relative flex items-center gap-4">
+            <div className="grid h-24 w-24 shrink-0 place-items-center rounded-full border-4 border-[#d59a21] bg-white p-2 shadow-md">
+              <img src={instituteLogo} alt="Institute logo" className="h-full w-full rounded-2xl object-contain" />
             </div>
-          ))}
+            <div className="min-w-0">
+              <h2 className="text-[38px] font-black leading-none tracking-[0.2em]">NITE</h2>
+              <p className="mt-2 text-[11px] font-bold uppercase leading-tight tracking-wide text-[#f4d28b]">
+                Nawab Institute Of Technical Education
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="relative mt-5 flex items-center gap-3">
+          <span className="h-px flex-1 bg-[#d59a21]" />
+          <span className="rounded-lg bg-primary px-5 py-2 text-[16px] font-black uppercase tracking-wide text-white shadow-sm">
+            Employee ID Card
+          </span>
+          <span className="h-px flex-1 bg-[#d59a21]" />
+        </div>
+
+        <div className="relative px-5 py-5">
+          <img
+            src={instituteLogo}
+            alt=""
+            aria-hidden="true"
+            className="pointer-events-none absolute bottom-12 right-2 h-44 w-44 object-contain opacity-[0.05]"
+          />
+
+          <div className="mb-5 flex justify-center">
+            <div className="grid h-[172px] w-[132px] place-items-center overflow-hidden rounded-xl border-2 border-[#d59a21] bg-[#f5f8fc] text-[34px] font-black text-[#082d61] shadow-sm">
+              {employee.profilePhotoUrl ? (
+                <img src={employee.profilePhotoUrl} alt={employee.name} className="h-full w-full object-cover" />
+              ) : (
+                getEmployeeInitials(employee.name)
+              )}
+            </div>
+          </div>
+
+          <div className="relative my-5 flex items-center gap-3">
+            <span className="h-px flex-1 bg-[#d59a21]" />
+            <span className="h-3 w-3 rotate-45 bg-[#d59a21]" />
+            <span className="h-px flex-1 bg-[#d59a21]" />
+          </div>
+
+          <div className="relative space-y-0">
+            {infoRows.map(([label, value]) => (
+              <div
+                key={label}
+                className="grid grid-cols-[112px_10px_1fr] items-start rounded-lg px-3 py-1 text-[12px] leading-tight"
+              >
+                <span className="font-black uppercase text-[#082d61]">{label}</span>
+                <span className="font-black text-[#082d61]">:</span>
+                <span className="break-words font-semibold text-slate-900">{value || "-"}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="relative mt-8 flex justify-end">
+            <div className="w-44 text-center">
+              <div className="border-t border-slate-800" />
+              <p className="mt-2 text-[12px] font-bold text-slate-900">Authorized Signature</p>
+              <p className="text-[10px] font-semibold text-slate-500">(Director / Principal)</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="h-8 bg-[#082d61]">
+          <div className="h-2 bg-[#d59a21]" />
         </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const loadCardImage = (src) =>
   new Promise((resolve, reject) => {
@@ -304,106 +354,213 @@ const drawWrappedText = (context, text, x, y, maxWidth, lineHeight, maxLines = 2
   });
 };
 
-const drawRoundImage = (context, image, x, y, size) => {
-  context.save();
-  context.beginPath();
-  context.arc(x + size / 2, y + size / 2, size / 2, 0, Math.PI * 2);
-  context.clip();
-  context.drawImage(image, x, y, size, size);
-  context.restore();
-};
-
 const downloadEmployeeIdCard = async (employee) => {
+  const width = 420;
+  const height = 620;
+  const outputWidth = 540;
+  const outputHeight = 860;
   const canvas = document.createElement("canvas");
-  const scale = 2;
-  const width = 300;
-  const height = 470;
-  canvas.width = width * scale;
-  canvas.height = height * scale;
+  canvas.width = outputWidth;
+  canvas.height = outputHeight;
+  const ctx = canvas.getContext("2d");
+  ctx.scale(outputWidth / width, outputHeight / height);
 
-  const context = canvas.getContext("2d");
-  context.scale(scale, scale);
-  context.fillStyle = "#f8fafc";
-  context.fillRect(0, 0, width, height);
+  const navy = "#082d61";
+  const gold = "#d59a21";
+  const cardBg = "#ffffff";
+  const white = "#ffffff";
+  const slate900 = "#0f172a";
+  const slate500 = "#64748b";
 
-  context.fillStyle = "#ffffff";
-  context.strokeStyle = "#dbe3ee";
-  context.lineWidth = 1;
-  context.beginPath();
-  context.roundRect(16, 16, 268, 438, 16);
-  context.fill();
-  context.stroke();
+  const roundRect = (x, y, w, h, r) => {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  };
 
-  context.fillStyle = "#0f3b66";
-  context.beginPath();
-  context.roundRect(16, 16, 268, 82, 16);
-  context.fill();
-  context.fillRect(16, 70, 268, 28);
+  const drawCircleClippedImage = (image, cx, cy, r, padding = 0) => {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.drawImage(image, cx - r + padding, cy - r + padding, (r - padding) * 2, (r - padding) * 2);
+    ctx.restore();
+  };
 
-  try {
-    const logo = await loadCardImage(instituteLogo);
-    context.fillStyle = "#ffffff";
-    context.beginPath();
-    context.arc(52, 57, 24, 0, Math.PI * 2);
-    context.fill();
-    drawRoundImage(context, logo, 32, 37, 40);
-  } catch {
-    context.fillStyle = "#ffffff";
-    context.beginPath();
-    context.arc(52, 57, 24, 0, Math.PI * 2);
-    context.fill();
-    context.fillStyle = "#0f3b66";
-    context.font = "700 13px Arial";
-    context.textAlign = "center";
-    context.fillText("NITE", 52, 62);
+  const drawRoundedImage = (image, x, y, w, h, r) => {
+    ctx.save();
+    roundRect(x, y, w, h, r);
+    ctx.clip();
+    ctx.drawImage(image, x, y, w, h);
+    ctx.restore();
+  };
+
+  const logo = await loadCardImage(instituteLogo).catch(() => null);
+
+  ctx.fillStyle = cardBg;
+  roundRect(0, 0, width, height, 26);
+  ctx.fill();
+
+  const headerH = 140;
+  ctx.save();
+  roundRect(0, 0, width, height, 26);
+  ctx.clip();
+  ctx.fillStyle = navy;
+  ctx.fillRect(0, 0, width, headerH);
+  ctx.fillStyle = gold;
+  ctx.fillRect(0, headerH - 8, width, 8);
+  ctx.restore();
+
+  const logoCX = 72, logoCY = 68, logoR = 48;
+  ctx.beginPath();
+  ctx.arc(logoCX, logoCY, logoR, 0, Math.PI * 2);
+  ctx.fillStyle = gold;
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(logoCX, logoCY, logoR - 4, 0, Math.PI * 2);
+  ctx.fillStyle = white;
+  ctx.fill();
+  if (logo) {
+    drawCircleClippedImage(logo, logoCX, logoCY, logoR - 8, 8);
+  } else {
+    ctx.fillStyle = navy;
+    ctx.font = "bold 13px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText("NITE", logoCX, logoCY + 5);
   }
 
-  context.textAlign = "left";
-  context.fillStyle = "#ffffff";
-  context.font = "800 17px Arial";
-  context.fillText("NITE", 86, 51);
-  context.font = "700 10px Arial";
-  context.fillText("EMPLOYEE ID CARD", 86, 70);
+  ctx.textAlign = "left";
+  ctx.fillStyle = white;
+  ctx.font = "900 38px Arial";
+  ctx.fillText("NITE", 134, 68);
+  ctx.fillStyle = "#f4d28b";
+  ctx.font = "700 11px Arial";
+  drawWrappedText(ctx, "NAWAB INSTITUTE OF TECHNICAL EDUCATION", 134, 92, 230, 13, 2);
 
-  context.fillStyle = "#eef6ff";
-  context.beginPath();
-  context.roundRect(105, 116, 90, 90, 45);
-  context.fill();
+  const badgeY = 166;
+  ctx.strokeStyle = gold;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(24, badgeY + 10);
+  ctx.lineTo(125, badgeY + 10);
+  ctx.stroke();
+  ctx.fillStyle = navy;
+  roundRect(125, badgeY - 2, 170, 28, 8);
+  ctx.fill();
+  ctx.fillStyle = white;
+  ctx.font = "900 13px Arial";
+  ctx.textAlign = "center";
+  ctx.fillText("EMPLOYEE ID CARD", 210, badgeY + 17);
+  ctx.strokeStyle = gold;
+  ctx.beginPath();
+  ctx.moveTo(295, badgeY + 10);
+  ctx.lineTo(396, badgeY + 10);
+  ctx.stroke();
+
+  if (logo) {
+    ctx.save();
+    ctx.globalAlpha = 0.05;
+    ctx.drawImage(logo, 252, 368, 176, 176);
+    ctx.restore();
+  }
+
+  const photoW = 132, photoH = 172;
+  const photoX = (width - photoW) / 2;
+  const photoY = 215;
+  ctx.fillStyle = gold;
+  roundRect(photoX - 2, photoY - 2, photoW + 4, photoH + 4, 12);
+  ctx.fill();
 
   try {
     const photo = await loadCardImage(employee.profilePhotoUrl);
-    drawRoundImage(context, photo, 105, 116, 90);
+    drawRoundedImage(photo, photoX, photoY, photoW, photoH, 10);
   } catch {
-    context.fillStyle = "#0f3b66";
-    context.font = "800 28px Arial";
-    context.textAlign = "center";
-    context.fillText(getEmployeeInitials(employee.name), 150, 169);
+    ctx.fillStyle = "#f5f8fc";
+    roundRect(photoX, photoY, photoW, photoH, 10);
+    ctx.fill();
+    ctx.fillStyle = navy;
+    ctx.font = "900 34px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(getEmployeeInitials(employee.name), photoX + photoW / 2, photoY + photoH / 2 + 12);
   }
 
-  context.textAlign = "center";
-  context.fillStyle = "#0f172a";
-  context.font = "800 18px Arial";
-  drawWrappedText(context, employee.name || "Employee", 150, 236, 220, 21, 2);
+  const divY = 410;
+  ctx.strokeStyle = gold;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(20, divY);
+  ctx.lineTo(190, divY);
+  ctx.stroke();
+  ctx.save();
+  ctx.translate(210, divY);
+  ctx.rotate(Math.PI / 4);
+  ctx.fillStyle = gold;
+  ctx.fillRect(-5, -5, 10, 10);
+  ctx.restore();
+  ctx.beginPath();
+  ctx.moveTo(230, divY);
+  ctx.lineTo(400, divY);
+  ctx.stroke();
 
-  const designationDepartment = [employee.roleLabel, employee.departmentLabel].filter(Boolean).join(" / ");
   const fields = [
+    ["Name", employee.name],
+    ["Email", employee.email],
     ["Phone Number", employee.phone],
-    ["Employee ID", employee.employeeId],
-    ["Designation / Department", designationDepartment],
-    ["Address", employee.address],
+    ["Designation", employee.roleLabel],
+    ["Department", employee.departmentLabel],
   ];
 
-  context.textAlign = "left";
-  let y = 288;
+  let infoY = divY + 24;
   fields.forEach(([label, value]) => {
-    context.fillStyle = "#64748b";
-    context.font = "700 9px Arial";
-    context.fillText(label.toUpperCase(), 36, y);
-    context.fillStyle = "#111827";
-    context.font = "700 12px Arial";
-    drawWrappedText(context, value || "-", 36, y + 17, 228, 16, label === "Address" || label === "Designation / Department" ? 2 : 1);
-    y += label === "Address" ? 56 : 44;
+    ctx.fillStyle = navy;
+    ctx.font = "900 10px Arial";
+    ctx.textAlign = "left";
+    ctx.fillText(label.toUpperCase(), 32, infoY);
+    ctx.fillStyle = navy;
+    ctx.font = "900 10px Arial";
+    ctx.fillText(":", 142, infoY);
+    ctx.fillStyle = slate900;
+    ctx.font = "700 12px Arial";
+    drawWrappedText(ctx, value || "-", 158, infoY, 230, 14, 1);
+    infoY += 19;
   });
+
+  const sigY = 548;
+  ctx.strokeStyle = slate900;
+  ctx.lineWidth = 0.8;
+  ctx.beginPath();
+  ctx.moveTo(244, sigY);
+  ctx.lineTo(396, sigY);
+  ctx.stroke();
+  ctx.fillStyle = slate900;
+  ctx.font = "700 12px Arial";
+  ctx.textAlign = "center";
+  ctx.fillText("Authorized Signature", 320, sigY + 18);
+  ctx.fillStyle = slate500;
+  ctx.font = "600 10px Arial";
+  ctx.fillText("(Director / Principal)", 320, sigY + 32);
+
+  ctx.save();
+  roundRect(0, 0, width, height, 26);
+  ctx.clip();
+  ctx.fillStyle = navy;
+  ctx.fillRect(0, height - 32, width, 32);
+  ctx.fillStyle = gold;
+  ctx.fillRect(0, height - 32, width, 8);
+  ctx.restore();
+
+  ctx.strokeStyle = gold + "66";
+  ctx.lineWidth = 1.5;
+  roundRect(0, 0, width, height, 26);
+  ctx.stroke();
 
   const fileName = `employee-id-card-${String(employee.employeeId || employee.name || "employee")
     .trim()
