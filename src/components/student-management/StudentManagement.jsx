@@ -1,5 +1,25 @@
 import { useEffect, useState } from "react";
-import { AlertTriangle, Download, Edit, Eye, Plus, Save, Search, Trash2, X } from "lucide-react";
+import { renderToStaticMarkup } from "react-dom/server";
+import {
+  AlertTriangle,
+  CalendarDays,
+  Download,
+  Droplet,
+  Edit,
+  Eye,
+  GraduationCap,
+  House,
+  IdCard,
+  Mail,
+  Phone,
+  Plus,
+  Save,
+  Search,
+  Trash2,
+  User,
+  VenusAndMars,
+  X,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import Pagination from "../common/Pagination.jsx";
@@ -28,6 +48,9 @@ const normalizeStudent = (student) => ({
     guardianPhone: student.guardian_phone || student.guardianPhone || "",
     fatherName: student.father_name || student.fatherName || student.guardian_name || student.guardianName || "",
     address: student.address || "",
+    gender: student.gender || "",
+    bloodGroup: student.blood_group || student.bloodGroup || "",
+    academicSession: student.academic_session || student.academicSession || student.session_year || "",
     status: student.status || "",
     feesStatus: student.fees_status || student.feesStatus || "",
     avatarUrl: student.photo || student.profile_photo || student.profilePhoto || student.avatar || "",
@@ -119,28 +142,42 @@ const DocumentPreview = ({ label, url }) => (
 );
 
 const STUDENT_ID_CARD_EXPORT_WIDTH = 540;
-const STUDENT_ID_CARD_EXPORT_HEIGHT = 860;
+const STUDENT_ID_CARD_EXPORT_HEIGHT = 760;
 const STUDENT_ID_CARD_PREVIEW_WIDTH = 420;
 const STUDENT_ID_CARD_PREVIEW_HEIGHT =
   (STUDENT_ID_CARD_PREVIEW_WIDTH * STUDENT_ID_CARD_EXPORT_HEIGHT) / STUDENT_ID_CARD_EXPORT_WIDTH;
 
-const StudentIdCardPreview = ({ student }) => {
+const getAcademicSession = (student) => {
+  if (student.academicSession) return student.academicSession;
+  const admission = new Date(student.admissionDate);
+  if (Number.isNaN(admission.getTime())) return "";
+  const year = admission.getFullYear();
+  return `${year}-${year + 1}`;
+};
+
+const getStudentIdCardDetails = (student) => {
   const topDetails = [
-    ["Student Name", student.name],
-    ["Course", student.courseName],
-    // ["Session", "2026"],
-    ["Roll Number", student.rollNumber],
-  ];
+    ["Student Name", student.name, User],
+    ["Course", student.courseName, GraduationCap],
+    ["Session", getAcademicSession(student), CalendarDays],
+    ["Roll Number", student.rollNumber, IdCard],
+  ].filter(([label, value]) => value || label !== "Session");
 
   const infoRows = [
-    // ["Father Name", student.fatherName],
-    ["DOB", formatDate(student.session)],
-    // ["Gender", "Male"],
-    // ["Blood Group", "B+"],
-    ["Phone", student.phone],
-    ["Email", student.email],
-    ["Address", student.address],
-  ];
+    ["Date of Birth", formatDate(student.session), CalendarDays],
+    ["Gender", student.gender, VenusAndMars],
+    ["Blood Group", student.bloodGroup, Droplet],
+    ["Address", student.address, House],
+    ["Phone Number", student.phone, Phone],
+    ["Email ID", student.email, Mail],
+  ].filter(([label, value]) => value || (label !== "Gender" && label !== "Blood Group"));
+
+  return { topDetails, infoRows };
+};
+
+// TODO: remove temporary export once visual verification is done
+export const StudentIdCardPreview = ({ student }) => {
+  const { topDetails, infoRows } = getStudentIdCardDetails(student);
 
   return (
     <div className="sm:col-span-2">
@@ -156,98 +193,112 @@ const StudentIdCardPreview = ({ student }) => {
       </div>
 
       <div
-        className="mx-auto flex w-full flex-col overflow-hidden rounded-[26px] border border-[#d59a21]/40 bg-white shadow-xl"
+        className="relative mx-auto flex w-full flex-col overflow-hidden rounded-[26px] border border-[#d59a21]/40 bg-white shadow-xl"
         style={{
           maxWidth: `${STUDENT_ID_CARD_PREVIEW_WIDTH}px`,
           minHeight: `${STUDENT_ID_CARD_PREVIEW_HEIGHT}px`,
           aspectRatio: `${STUDENT_ID_CARD_EXPORT_WIDTH} / ${STUDENT_ID_CARD_EXPORT_HEIGHT}`,
         }}
       >
-        <div className="relative shrink-0 bg-[#082d61] px-6 pb-7 pt-5 text-white">
-          <div className="absolute inset-x-0 bottom-0 h-2 bg-[#d59a21]" />
-          <div className="relative flex items-center gap-4">
-            <div className="grid h-24 w-24 shrink-0 place-items-center rounded-full border-4 border-[#d59a21] bg-white p-2 shadow-md">
-              <img src={instituteLogo} alt="Institute logo" className="h-full w-full object-contain rounded-2xl" />
-            </div>
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-44 overflow-hidden">
+          <div className="absolute inset-0 bg-[#082d61]" />
+          <div className="absolute left-1/2 top-[30px] h-[200px] w-[181%] -translate-x-1/2 -rotate-2 rounded-[100%] bg-[#d59a21]" />
+          <div className="absolute left-1/2 top-[34px] h-[300px] w-[181%] -translate-x-1/2 -rotate-2 rounded-[100%] bg-white" />
+        </div>
+
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-44 overflow-hidden">
+          <div className="absolute inset-0 bg-[#082d61]" />
+          <div className="absolute bottom-[18px] left-1/2 h-[300px] w-[181%] -translate-x-1/2 rotate-2 rounded-[100%] bg-[#d59a21]" />
+          <div className="absolute bottom-[28px] left-1/2 h-[300px] w-[181%] -translate-x-1/2 rotate-2 rounded-[100%] bg-white" />
+        </div>
+
+        <img
+          src={instituteLogo}
+          alt=""
+          aria-hidden="true"
+          className="pointer-events-none absolute bottom-20 right-2 h-44 w-44 object-contain opacity-[0.06]"
+        />
+
+        <div className="relative flex flex-1 flex-col px-5 pb-10 pt-13">
+          <div className="flex items-center justify-center gap-3">
+            <img src={instituteLogo} alt="Institute logo" className="h-20 w-20 shrink-0 object-contain" />
             <div className="min-w-0">
-              <h2 className="text-[38px] font-black leading-none tracking-[0.2em]">NITE</h2>
-              <p className="mt-2 text-[11px] font-bold uppercase leading-tight tracking-wide text-[#f4d28b]">
+              <h2 className="font-serif text-[34px] font-black leading-none tracking-[0.14em] text-[#082d61]">NITE</h2>
+              <p className="mt-1 max-w-[200px] font-serif text-[12px] font-bold uppercase leading-snug text-[#082d61]">
                 Nawab Institute Of Technical Education
               </p>
+              <div className="mt-1.5 flex items-center gap-1.5">
+                <span className="h-px flex-1 bg-[#d59a21]" />
+                <span className="h-1.5 w-1.5 rotate-45 bg-[#d59a21]" />
+                <span className="h-px flex-1 bg-[#d59a21]" />
+              </div>
             </div>
           </div>
-        </div>
-          <div className="relative mt-5 flex shrink-0 items-center gap-3">
-            <span className="h-px flex-1 bg-[#d59a21]" />
-            <span className="rounded-lg bg-primary px-5 py-2 text-[16px] font-black uppercase tracking-wide text-white shadow-sm">
+
+          <div className="mt-2.5 flex items-center justify-center gap-3">
+            <span className="h-px w-8 bg-[#d59a21]" />
+            <span className="rounded-lg bg-[#082d61] px-7 py-1.5 text-[15px] font-black uppercase tracking-wide text-white shadow-sm">
               Student ID Card
             </span>
-            <span className="h-px flex-1 bg-[#d59a21]" />
+            <span className="h-px w-8 bg-[#d59a21]" />
           </div>
 
-        <div className="relative flex flex-1 flex-col px-5 py-5">
-          <img
-            src={instituteLogo}
-            alt=""
-            aria-hidden="true"
-            className="pointer-events-none absolute bottom-12 right-2 h-44 w-44 object-contain opacity-[0.05]"
-          />
-
-          <div className="relative grid grid-cols-[132px_1fr] gap-4">
+          <div className="mt-5 grid grid-cols-[126px_1fr] gap-4">
             <div>
               {student.avatarUrl ? (
                 <img
                   src={student.avatarUrl}
                   alt={student.name}
-                  className="h-[172px] w-[132px] rounded-xl border-2 border-[#d59a21] object-cover shadow-sm"
+                  className="h-[164px] w-[126px] rounded-xl border-2 border-[#d59a21] object-cover shadow-sm"
                 />
               ) : (
-                <div className="grid h-[172px] w-[132px] place-items-center rounded-xl border-2 border-[#d59a21] bg-[#f5f8fc] text-[34px] font-black text-[#082d61] shadow-sm">
+                <div className="grid h-[160px] w-[120px] place-items-center rounded-md bg-[#f5f8fc] text-[34px] font-black text-[#082d61]">
                   {getStudentInitials(student.name)}
                 </div>
               )}
             </div>
 
             <div className="space-y-2">
-              {topDetails.map(([label, value]) => (
-                <div key={label}>
-                  <p className="text-[10px] font-black uppercase tracking-wide text-[#082d61]">{label}</p>
-                  <p className="mt-0.5 break-words text-[13px] font-extrabold leading-snug text-slate-900">{value || "-"}</p>
+              {topDetails.map(([label, value, Icon]) => (
+                <div key={label} className="flex items-start gap-2.5">
+                  <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#082d61] text-white">
+                    <Icon className="h-3.5 w-3.5" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-extrabold uppercase tracking-wide text-[#082d61]">{label}</p>
+                    <p className="break-words text-[13px] font-bold leading-tight text-slate-900">{value || "-"}</p>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="relative my-5 flex items-center gap-3">
+          <div className="my-3 flex items-center gap-3">
             <span className="h-px flex-1 bg-[#d59a21]" />
-            <span className="h-3 w-3 rotate-45 bg-[#d59a21]" />
+            <span className="h-2 w-2 rotate-45 bg-[#d59a21]" />
             <span className="h-px flex-1 bg-[#d59a21]" />
           </div>
 
-          <div className="relative space-y-0">
-            {infoRows.map(([label, value]) => (
-              <div
-                key={label}
-                className="grid grid-cols-[96px_10px_1fr] items-start rounded-lg px-3 py-1 text-[12px] leading-tight"
-              >
-                <span className="font-black uppercase text-[#082d61]">{label}</span>
-                <span className="font-black text-[#082d61]">:</span>
-                <span className="break-words font-semibold text-slate-900">{value || "-"}</span>
+          <div className="space-y-1.5">
+            {infoRows.map(([label, value, Icon]) => (
+              <div key={label} className="grid grid-cols-[24px_110px_8px_1fr] items-start gap-x-2 text-[12px] leading-tight">
+                <span className="grid h-6 w-6 place-items-center rounded-full bg-[#082d61] text-white">
+                  <Icon className="h-3 w-3" />
+                </span>
+                <span className="pt-1 text-[10px] font-extrabold uppercase tracking-wide text-[#082d61]">{label}</span>
+                <span className="pt-0.5 font-black text-[#082d61]">:</span>
+                <span className="break-words pt-0.5 font-bold text-slate-900">{value || "-"}</span>
               </div>
             ))}
           </div>
 
-          <div className="relative mt-auto flex justify-end pt-8">
+          <div className="mt-auto flex justify-end pt-3">
             <div className="w-44 text-center">
-              <div className="border-t border-slate-800" />
-              <p className="mt-2 text-[12px] font-bold text-slate-900">Authorized Signature</p>
-              <p className="text-[10px] font-semibold text-slate-500">(Director / Principal)</p>
+              <div className="mx-auto w-36 border-t border-slate-800" />
+              <p className="mt-1 text-[12px] font-bold text-slate-900">Authorized Signature</p>
+              <p className="text-[10px] font-semibold text-slate-600">(Director / Principal)</p>
             </div>
           </div>
-        </div>
-
-        <div className="h-8 shrink-0 bg-[#082d61]">
-          <div className="h-2 bg-[#d59a21]" />
         </div>
       </div>
     </div>
@@ -297,15 +348,6 @@ const downloadStudentIdCard = async (student) => {
       img.src = src;
     });
 
-  const drawCircleClippedImage = (img, cx, cy, r, padding = 0) => {
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.clip();
-    ctx.drawImage(img, cx - r + padding, cy - r + padding, (r - padding) * 2, (r - padding) * 2);
-    ctx.restore();
-  };
-
   const drawRoundedImage = (img, x, y, w, h, r) => {
     ctx.save();
     roundRect(x, y, w, h, r);
@@ -338,93 +380,126 @@ const downloadStudentIdCard = async (student) => {
 
   const logo = await loadImg(instituteLogo).catch(() => null);
 
+  const { topDetails, infoRows } = getStudentIdCardDetails(student);
+  const loadIcon = (Icon) =>
+    loadImg(
+      `data:image/svg+xml;utf8,${encodeURIComponent(
+        renderToStaticMarkup(<Icon color="#ffffff" size={24} strokeWidth={2.5} />)
+      )}`
+    ).catch(() => null);
+  const iconList = [...new Set([...topDetails, ...infoRows].map(([, , icon]) => icon))];
+  const iconImages = new Map(await Promise.all(iconList.map(async (icon) => [icon, await loadIcon(icon)])));
+
+  const drawIconBadge = (icon, cx, cy, r, iconSize) => {
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = navy;
+    ctx.fill();
+    const img = iconImages.get(icon);
+    if (img) ctx.drawImage(img, cx - iconSize / 2, cy - iconSize / 2, iconSize, iconSize);
+  };
+
   // ── card background ───────────────────────────────────
   ctx.fillStyle = cardBg;
   roundRect(0, 0, width, height, 26);
   ctx.fill();
 
-  // ── navy header ───────────────────────────────────────
-  const headerH = 140;
+  // ── top & bottom arches ───────────────────────────────
+  const archTilt = (-2 * Math.PI) / 180;
   ctx.save();
   roundRect(0, 0, width, height, 26);
   ctx.clip();
+
   ctx.fillStyle = navy;
-  ctx.fillRect(0, 0, width, headerH);
+  ctx.fillRect(0, 0, width, 120);
   ctx.fillStyle = gold;
-  ctx.fillRect(0, headerH - 8, width, 8);
+  ctx.beginPath();
+  ctx.ellipse(width / 2, 24 + 150, 380, 150, archTilt, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = cardBg;
+  ctx.beginPath();
+  ctx.ellipse(width / 2, 34 + 150, 380, 150, archTilt, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = navy;
+  ctx.fillRect(0, height - 120, width, 120);
+  ctx.fillStyle = gold;
+  ctx.beginPath();
+  ctx.ellipse(width / 2, height - 18 - 150, 380, 150, -archTilt, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = cardBg;
+  ctx.beginPath();
+  ctx.ellipse(width / 2, height - 28 - 150, 380, 150, -archTilt, 0, Math.PI * 2);
+  ctx.fill();
+
+  if (logo) {
+    ctx.globalAlpha = 0.06;
+    ctx.drawImage(logo, 236, height - 256, 176, 176);
+    ctx.globalAlpha = 1;
+  }
   ctx.restore();
 
-  // ── logo circle ───────────────────────────────────────
-  const logoCX = 72, logoCY = 68, logoR = 48;
-  ctx.beginPath();
-  ctx.arc(logoCX, logoCY, logoR, 0, Math.PI * 2);
-  ctx.fillStyle = gold;
-  ctx.fill();
-  ctx.beginPath();
-  ctx.arc(logoCX, logoCY, logoR - 4, 0, Math.PI * 2);
-  ctx.fillStyle = white;
-  ctx.fill();
+  // ── institute branding ────────────────────────────────
   if (logo) {
-    drawCircleClippedImage(logo, logoCX, logoCY, logoR - 8, 8);
-  } else {
-    ctx.fillStyle = navy;
-    ctx.font = "bold 13px Arial";
-    ctx.textAlign = "center";
-    ctx.fillText("NITE", logoCX, logoCY + 5);
+    ctx.drawImage(logo, 58, 50, 88, 88);
   }
-
-  // ── institute name ────────────────────────────────────
   ctx.textAlign = "left";
-  ctx.fillStyle = white;
-  ctx.font = "900 38px Arial";
-  ctx.fillText("NITE", 134, 68);
-  ctx.fillStyle = "#f4d28b";
-  ctx.font = "700 11px Arial";
-  wrapText("NAWAB INSTITUTE OF TECHNICAL EDUCATION", 134, 92, 230, 13, 2);
+  ctx.fillStyle = navy;
+  ctx.letterSpacing = "5px";
+  ctx.font = "900 40px Georgia, 'Times New Roman', serif";
+  ctx.fillText("NITE", 162, 88);
+  ctx.letterSpacing = "0px";
+  ctx.font = "700 13px Georgia, 'Times New Roman', serif";
+  wrapText("NAWAB INSTITUTE OF TECHNICAL EDUCATION", 162, 108, 200, 15, 2);
 
-  // ── Student ID Card badge ─────────────────────────────
-  const badgeY = 166;
-  // left line
+  // ── gold ornament ─────────────────────────────────────
   ctx.strokeStyle = gold;
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.moveTo(24, badgeY + 10);
-  ctx.lineTo(125, badgeY + 10);
+  ctx.moveTo(162, 136);
+  ctx.lineTo(248, 136);
+  ctx.moveTo(268, 136);
+  ctx.lineTo(354, 136);
   ctx.stroke();
-  // badge rect
-  ctx.fillStyle = navy;
-  roundRect(125, badgeY - 2, 170, 28, 8);
-  ctx.fill();
-  ctx.fillStyle = white;
-  ctx.font = "900 13px Arial";
-  ctx.textAlign = "center";
-  ctx.fillText("STUDENT ID CARD", 210, badgeY + 17);
-  // right line
+  ctx.save();
+  ctx.translate(258, 136);
+  ctx.rotate(Math.PI / 4);
+  ctx.fillStyle = gold;
+  ctx.fillRect(-3.5, -3.5, 7, 7);
+  ctx.restore();
+
+  // ── Student ID Card badge ─────────────────────────────
   ctx.strokeStyle = gold;
   ctx.beginPath();
-  ctx.moveTo(295, badgeY + 10);
-  ctx.lineTo(396, badgeY + 10);
+  ctx.moveTo(68, 176);
+  ctx.lineTo(100, 176);
+  ctx.moveTo(320, 176);
+  ctx.lineTo(352, 176);
   ctx.stroke();
-
-  if (logo) {
-    ctx.save();
-    ctx.globalAlpha = 0.05;
-    ctx.drawImage(logo, 252, 368, 176, 176);
-    ctx.restore();
-  }
+  ctx.fillStyle = navy;
+  roundRect(108, 158, 204, 36, 12);
+  ctx.fill();
+  ctx.fillStyle = white;
+  ctx.font = "900 17px Arial";
+  ctx.textAlign = "center";
+  ctx.fillText("STUDENT ID CARD", 210, 182);
 
   // ── photo ─────────────────────────────────────────────
-  const photoX = 20, photoY = 215, photoW = 132, photoH = 172;
-  ctx.fillStyle = gold;
-  roundRect(photoX - 2, photoY - 2, photoW + 4, photoH + 4, 12);
-  ctx.fill();
+  // Preview uses px-5 (20px) padding and grid-cols-[126px_1fr] gap-4
+  const photoX = 20, photoY = 210;
   if (student.avatarUrl) {
+    // Matches preview: h-[164px] w-[126px] rounded-xl border-2 border-[#d59a21]
+    const photoW = 126, photoH = 164;
     try {
       const photo = await loadImg(student.avatarUrl);
-      drawRoundedImage(photo, photoX, photoY, photoW, photoH, 10);
+      drawRoundedImage(photo, photoX, photoY, photoW, photoH, 12);
+      ctx.strokeStyle = gold;
+      ctx.lineWidth = 2;
+      roundRect(photoX, photoY, photoW, photoH, 12);
+      ctx.stroke();
     } catch {
       ctx.fillStyle = "#f5f8fc";
-      roundRect(photoX, photoY, photoW, photoH, 10);
+      roundRect(photoX, photoY, photoW, photoH, 12);
       ctx.fill();
       ctx.fillStyle = navy;
       ctx.font = "900 34px Arial";
@@ -432,105 +507,92 @@ const downloadStudentIdCard = async (student) => {
       ctx.fillText(getStudentInitials(student.name), photoX + photoW / 2, photoY + photoH / 2 + 12);
     }
   } else {
+    // Matches preview: h-[160px] w-[120px] — centered in the 126px column (3px each side)
+    const photoW = 120, photoH = 160;
     ctx.fillStyle = "#f5f8fc";
-    roundRect(photoX, photoY, photoW, photoH, 10);
+    roundRect(photoX + 3, photoY, photoW, photoH, 8);
     ctx.fill();
     ctx.fillStyle = navy;
     ctx.font = "900 34px Arial";
     ctx.textAlign = "center";
-    ctx.fillText(getStudentInitials(student.name), photoX + photoW / 2, photoY + photoH / 2 + 12);
+    ctx.fillText(getStudentInitials(student.name), photoX + 63, photoY + photoH / 2 + 12);
   }
 
   // ── top detail fields ─────────────────────────────────
-  const topDetails = [
-    ["Student Name", student.name],
-    ["Course", student.courseName],
-    ["Roll Number", student.rollNumber],
-  ];
-  const detailX = 168;
-  let detailY = 224;
-  topDetails.forEach(([label, value]) => {
+  // Preview: px-5(20) + photo-col(126) + gap-4(16) + icon-w-7(28) + gap-2.5(10) = text at 200
+  // Icon center: 20 + 126 + 16 + 14 = 176
+  const detailX = 200;
+  let detailY = 216;
+  topDetails.forEach(([label, value, icon]) => {
+    drawIconBadge(icon, 176, detailY + 7, 12, 14);
     ctx.fillStyle = navy;
-    ctx.font = "900 10px Arial";
+    ctx.font = "800 11px Arial";
     ctx.textAlign = "left";
-    ctx.fillText(label.toUpperCase(), detailX, detailY);
+    ctx.fillText(label.toUpperCase(), detailX, detailY + 5);
     ctx.fillStyle = slate900;
-    ctx.font = "800 13px Arial";
-    wrapText(value || "-", detailX, detailY + 16, 220, 15, label === "Course" ? 2 : 1);
-    detailY += label === "Course" ? 48 : 42;
+    ctx.font = "700 14px Arial";
+    wrapText(value || "-", detailX, detailY + 22, 195, 16, label === "Course" ? 2 : 1);
+    detailY += label === "Course" ? 56 : 42;
   });
 
   // ── divider ───────────────────────────────────────────
-  const divY = 410;
+  const divY = 392;
   ctx.strokeStyle = gold;
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.moveTo(20, divY);
-  ctx.lineTo(190, divY);
+  ctx.lineTo(194, divY);
   ctx.stroke();
   // diamond
   ctx.save();
   ctx.translate(210, divY);
   ctx.rotate(Math.PI / 4);
   ctx.fillStyle = gold;
-  ctx.fillRect(-5, -5, 10, 10);
+  ctx.fillRect(-4.5, -4.5, 9, 9);
   ctx.restore();
   ctx.beginPath();
-  ctx.moveTo(230, divY);
-  ctx.lineTo(400, divY);
+  ctx.moveTo(226, divY);
+  ctx.lineTo(390, divY);
   ctx.stroke();
 
   // ── info rows ─────────────────────────────────────────
-  const infoRows = [
-    ["DOB", formatDate(student.session)],
-    ["Phone", student.phone],
-    ["Email", student.email],
-    ["Address", student.address],
-  ];
-  let infoY = divY + 24;
-  infoRows.forEach(([label, value]) => {
+  // Preview grid: px-5(20) | icon(24) | gap-x-2(8) | label(110) | gap-x-2(8) | colon(8) | gap-x-2(8) | value
+  // Icon center: 20+12=32, label: 52, colon: 52+110+8=170, value: 170+8+8=186
+  let infoY = 410;
+  infoRows.forEach(([label, value, icon]) => {
+    drawIconBadge(icon, 32, infoY + 2, 11, 13);
 
     ctx.fillStyle = navy;
-    ctx.font = "900 10px Arial";
+    ctx.font = "800 11px Arial";
     ctx.textAlign = "left";
-    ctx.fillText(label.toUpperCase(), 32, infoY);
+    ctx.fillText(label.toUpperCase(), 52, infoY + 6);
 
     ctx.fillStyle = navy;
-    ctx.font = "900 10px Arial";
-    ctx.fillText(":", 132, infoY);
+    ctx.font = "900 12px Arial";
+    ctx.fillText(":", 170, infoY + 6);
 
     ctx.fillStyle = slate900;
-    ctx.font = "700 12px Arial";
-    wrapText(value || "-", 148, infoY, 240, 14, label === "Address" ? 2 : 1);
+    ctx.font = "700 13px Arial";
+    wrapText(value || "-", 186, infoY + 6, 214, 15, label === "Address" ? 2 : 1);
 
-    infoY += label === "Address" ? 27 : 19;
+    infoY += label === "Address" ? 36 : 22;
   });
 
   // ── signature ─────────────────────────────────────────
-  const sigY = 548;
+  const sigY = 528;
   ctx.strokeStyle = slate900;
   ctx.lineWidth = 0.8;
   ctx.beginPath();
-  ctx.moveTo(244, sigY);
-  ctx.lineTo(396, sigY);
+  ctx.moveTo(252, sigY);
+  ctx.lineTo(388, sigY);
   ctx.stroke();
   ctx.fillStyle = slate900;
   ctx.font = "700 12px Arial";
   ctx.textAlign = "center";
-  ctx.fillText("Authorized Signature", 320, sigY + 18);
+  ctx.fillText("Authorized Signature", 320, sigY + 15);
   ctx.fillStyle = slate500;
   ctx.font = "600 10px Arial";
-  ctx.fillText("(Director / Principal)", 320, sigY + 32);
-
-  // ── footer ────────────────────────────────────────────
-  ctx.save();
-  roundRect(0, 0, width, height, 26);
-  ctx.clip();
-  ctx.fillStyle = navy;
-  ctx.fillRect(0, height - 32, width, 32);
-  ctx.fillStyle = gold;
-  ctx.fillRect(0, height - 32, width, 8);
-  ctx.restore();
+  ctx.fillText("(Director / Principal)", 320, sigY + 27);
 
   // ── card border ───────────────────────────────────────
   ctx.strokeStyle = gold + "66";
