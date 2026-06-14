@@ -5,6 +5,7 @@ import { callApi } from "../../services/ApiService.js";
 import toast from "react-hot-toast";
 import Loader from "../common/Loader.jsx";
 import StudentResultModal from "./StudentResultModal.jsx";
+import { RESULT_SUBJECTS } from "./resultSubjects.js";
 
 const initialForm = {
   name: "",
@@ -78,6 +79,18 @@ const getStudentCount = (data) => {
   return data?.count ?? list.length;
 };
 
+const getCourseSubjects = (subjects) => {
+  if (Array.isArray(subjects)) {
+    return subjects.map((subject) => String(subject).trim()).filter(Boolean);
+  }
+
+  if (typeof subjects === "string" && subjects.trim()) {
+    return subjects.split(",").map((subject) => subject.trim()).filter(Boolean);
+  }
+
+  return [];
+};
+
 const getNextRollNumber = async () => {
   const response = await callApi({
     url: "/students/",
@@ -141,6 +154,48 @@ const getApiErrors = (data) => {
     nextErrors[field] = Array.isArray(value) ? value.join(" ") : String(value);
     return nextErrors;
   }, {});
+};
+
+const getResultErrorMessage = (data) => {
+  if (!data) return "Unable to publish result. Please try again.";
+  if (typeof data === "string") return data;
+  if (Array.isArray(data)) return data.map((item) => getResultErrorMessage(item)).join(" ");
+  if (typeof data !== "object") return String(data);
+
+  if (data.detail || data.message || data.error) {
+    return String(data.detail || data.message || data.error);
+  }
+
+  return Object.entries(data)
+    .map(([key, value]) => {
+      const message = Array.isArray(value)
+        ? value.map((item) => getResultErrorMessage(item)).join(" ")
+        : typeof value === "object"
+          ? getResultErrorMessage(value)
+          : String(value);
+
+      return `${key}: ${message}`;
+    })
+    .join(" ");
+};
+
+const normalizeResultMarks = (data) => {
+  const list = Array.isArray(data) ? data : data?.subjects_marks || data?.marks || data?.results || [];
+
+  return list
+    .map((mark) => ({
+      subject: mark?.subject || mark?.subject_name || mark?.name || "",
+      obtainedMarks: mark?.obtained_marks ?? mark?.obtainedMarks ?? mark?.marks ?? mark?.score ?? 0,
+    }))
+    .filter((mark) => mark.subject);
+};
+
+const getMarksForSubjects = (subjects, marks) => {
+  const markBySubject = new Map(
+    marks.map((mark) => [mark.subject.trim().toLowerCase(), String(mark.obtainedMarks ?? 0)])
+  );
+
+  return subjects.map((subject) => markBySubject.get(subject.trim().toLowerCase()) ?? "0");
 };
 
 const getDateValue = (value) => {
@@ -236,6 +291,10 @@ export default function AddStudent() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [showResultModal, setShowResultModal] = useState(false);
   const [resultMarks, setResultMarks] = useState(["0", "0", "0", "0", "0"]);
+  const [resultSubjects, setResultSubjects] = useState(RESULT_SUBJECTS);
+  const [resultSubjectsLoading, setResultSubjectsLoading] = useState(false);
+  const [resultPublishing, setResultPublishing] = useState(false);
+  const [resultError, setResultError] = useState("");
   const [loading, setLoading] = useState(false);
   const [studentLoading, setStudentLoading] = useState(false);
   const [rollNumberLoading, setRollNumberLoading] = useState(false);
@@ -304,9 +363,79 @@ export default function AddStudent() {
     };
   }, [isEdit, studentId]);
 
+  useEffect(() => {
+    if (!form.course) {
+      return undefined;
+    }
+
+    let isActive = true;
+
+    const fetchCourseSubjects = async () => {
+      try {
+        setResultSubjectsLoading(true);
+        const response = await callApi({
+          url: `/courses/${form.course}/`,
+          method: "get",
+        });
+        const subjects = getCourseSubjects(response?.subjects);
+        let marks = [];
+
+        if (subjects.length > 0 && isEdit && studentId) {
+          try {
+            const resultResponse = await callApi({
+              url: `/students/${studentId}/result/`,
+              method: "get",
+              suppressErrorToast: true,
+            });
+            marks = normalizeResultMarks(resultResponse);
+          } catch (error) {
+            if (error.response?.status && error.response.status !== 404) {
+              console.log("Unable to load existing result:", error.response?.data || error.message);
+            }
+          }
+        }
+
+        if (isActive) {
+          if (subjects.length > 0) {
+            setResultSubjects(subjects);
+            setResultMarks(getMarksForSubjects(subjects, marks));
+            setResultError("");
+          } else {
+            setResultSubjects([]);
+            setResultMarks([]);
+            setResultError("No subjects found for the selected course.");
+          }
+        }
+      } catch {
+        if (isActive) {
+          setResultSubjects([]);
+          setResultMarks([]);
+          setResultError("Unable to load subjects for the selected course.");
+        }
+      } finally {
+        if (isActive) {
+          setResultSubjectsLoading(false);
+        }
+      }
+    };
+
+    fetchCourseSubjects();
+
+    return () => {
+      isActive = false;
+    };
+  }, [form.course, isEdit, studentId]);
+
   const updateField = (field, value) => {
     setForm((current) => ({ ...current, [field]: value }));
     setErrors((prev)=>({...prev, [field]: ""}))
+
+    if (field === "course" && !value) {
+      setResultSubjects(RESULT_SUBJECTS);
+      setResultMarks(RESULT_SUBJECTS.map(() => "0"));
+      setResultSubjectsLoading(false);
+      setResultError("");
+    }
 
   };
 
@@ -400,14 +529,52 @@ export default function AddStudent() {
   const updateResultMark = (index, value) => {
     const nextValue = Number(value || 0);
     const numericValue = Number.isFinite(nextValue) ? Math.max(0, Math.min(100, nextValue)) : 0;
+    setResultError("");
     setResultMarks((current) => current.map((mark, markIndex) => (
       markIndex === index ? String(numericValue) : mark
     )));
   };
 
-  const publishResult = () => {
-    toast.success("Result published successfully.");
-    setShowResultModal(false);
+  const publishResult = async () => {
+    if (!studentId) {
+      toast.error("Save the student before generating a result.");
+      return;
+    }
+
+    if (resultSubjectsLoading) {
+      toast.error("Please wait while course subjects are loading.");
+      return;
+    }
+
+    if (resultSubjects.length === 0) {
+      const message = "No subjects found for the selected course.";
+      setResultError(message);
+      toast.error(message, { id: "resultPublishError" });
+      return;
+    }
+
+    const marks = resultSubjects.map((subject, index) => ({
+      subject,
+      obtained_marks: Number(resultMarks[index] || 0),
+    }));
+
+    try {
+      setResultError("");
+      setResultPublishing(true);
+      await callApi({
+        url: `/students/${studentId}/result/`,
+        method: "post",
+        data: { marks },
+      });
+      toast.success("Result published successfully.");
+      setShowResultModal(false);
+    } catch (error) {
+      const message = getResultErrorMessage(error.response?.data);
+      setResultError(message);
+      toast.error(message, { id: "resultPublishError" });
+    } finally {
+      setResultPublishing(false);
+    }
   };
 
   return (
@@ -433,14 +600,20 @@ export default function AddStudent() {
           <div className="relative flex flex-col items-center text-center sm:col-span-2">
             <div className="mb-3 flex w-full flex-col items-center gap-3 sm:min-h-[84px] sm:flex-row sm:items-start sm:justify-center">
               <label className="block text-[12px] font-bold text-on-surface-variant sm:pt-2">Profile Photo</label>
-              <button
-                type="button"
-                onClick={() => setShowResultModal(true)}
-                className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-[12px] font-bold text-on-primary shadow-sm transition-opacity hover:opacity-90 sm:absolute sm:right-0 sm:top-0"
-              >
-                <Save className="h-3.5 w-3.5" />
-                Generate Result
-              </button>
+              {isEdit && (
+                <button
+                  type="button"
+                  disabled={resultSubjectsLoading}
+                  onClick={() => {
+                    setResultError("");
+                    setShowResultModal(true);
+                  }}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-[12px] font-bold text-on-primary shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70 sm:absolute sm:right-0 sm:top-0"
+                >
+                  <Save className="h-3.5 w-3.5" />
+                  {resultSubjectsLoading ? "Loading Subjects..." : "Generate Result"}
+                </button>
+              )}
             </div>
             <div className="mb-3 grid h-28 w-28 place-items-center overflow-hidden rounded-full border border-outline-variant bg-slate-50">
               {profilePreview ? (
@@ -685,9 +858,12 @@ export default function AddStudent() {
           mode="generate"
           student={resultStudent}
           marks={resultMarks}
+          subjects={resultSubjects}
           onMarksChange={updateResultMark}
           onClose={() => setShowResultModal(false)}
           onPublish={publishResult}
+          publishing={resultPublishing}
+          error={resultError}
         />
       )}
     </div>

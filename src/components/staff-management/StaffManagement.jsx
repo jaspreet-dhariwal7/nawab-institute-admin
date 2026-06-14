@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { AlertTriangle, Building2, Download, Edit, Eye, IdCard, Mail, Phone, Plus, Search, Trash2, User, X } from "lucide-react";
+import { AlertTriangle, Building2, Download, Edit, Eye, IdCard, Mail, Phone, Plus, Search, Trash2, X } from "lucide-react";
 import toast from "react-hot-toast";
 import { cn } from "../../lib/utlis.js";
 import { callApi } from "../../services/ApiService.js";
 import Pagination from "../common/Pagination.jsx";
-import instituteLogo from "../../assets/nite-logo.jpg";
+import idCardLogo from "../../assets/id-card-logo.png";
 import Loader from "../common/Loader.jsx";
 import NoDataFound from "../common/NoDataFound.jsx";
 
@@ -225,7 +225,6 @@ const EMPLOYEE_ID_CARD_PREVIEW_HEIGHT =
 
 const EmployeeIdCardPreview = ({ employee }) => {
   const infoRows = [
-    ["Name", employee.name, User],
     ["Email", employee.email, Mail],
     ["Phone Number", employee.phone, Phone],
     ["Designation", employee.roleLabel, IdCard],
@@ -268,14 +267,13 @@ const EmployeeIdCardPreview = ({ employee }) => {
           <div className="absolute bottom-[28px] left-1/2 h-[300px] w-[181%] -translate-x-1/2 rotate-2 rounded-[100%] bg-white" />
         </div>
 
-        {/* Watermark logos */}
-        <img src={instituteLogo} alt="" aria-hidden="true" className="pointer-events-none absolute bottom-28 left-0 h-28 w-28 object-contain opacity-[0.05]" />
-        <img src={instituteLogo} alt="" aria-hidden="true" className="pointer-events-none absolute bottom-28 right-0 h-28 w-28 object-contain opacity-[0.05]" />
+        {/* Watermark logo */}
+        <img src={idCardLogo} alt="" aria-hidden="true" className="pointer-events-none absolute bottom-24 left-1/2 h-36 w-36 -translate-x-1/2 object-contain opacity-[0.05]" />
 
         <div className="relative flex flex-1 flex-col items-center px-5 pb-10 pt-5">
           {/* Logo + Name */}
           <div className="mt-7 flex items-center justify-center gap-3">
-            <img src={instituteLogo} alt="Institute logo" className="h-14 w-14 shrink-0 object-contain" />
+            <img src={idCardLogo} alt="Institute logo" className="h-22 w-22 shrink-0 object-contain" />
             <div className="min-w-0">
               <h2 className="font-serif text-[24px] font-black leading-none tracking-[0.14em] text-[#082d61]">NITE</h2>
               <p className="mt-0.5 max-w-[155px] font-serif text-[9.5px] font-bold uppercase leading-snug text-[#082d61]">
@@ -335,7 +333,7 @@ const EmployeeIdCardPreview = ({ employee }) => {
           </div>
 
           {/* Signature */}
-          <div className="mt-3 flex w-full justify-end">
+          <div className="-mt-3 flex w-full justify-end">
             <div className="w-36 text-center">
               <div className="mx-auto w-28 border-t border-slate-800" />
               <p className="mt-1 text-[10px] font-bold text-slate-900">Authorized Signature</p>
@@ -349,15 +347,16 @@ const EmployeeIdCardPreview = ({ employee }) => {
 };
 
 const downloadEmployeeIdCard = async (employee) => {
-  const width = 420;
-  const height = 669;
-  const outputWidth = EMPLOYEE_ID_CARD_EXPORT_WIDTH;
-  const outputHeight = EMPLOYEE_ID_CARD_EXPORT_HEIGHT;
+  const width = EMPLOYEE_ID_CARD_PREVIEW_WIDTH;
+  const height = EMPLOYEE_ID_CARD_PREVIEW_HEIGHT;
+  const scale = 2;
+  const outputWidth = Math.round(width * scale);
+  const outputHeight = Math.round(height * scale);
   const canvas = document.createElement("canvas");
   canvas.width = outputWidth;
   canvas.height = outputHeight;
   const ctx = canvas.getContext("2d");
-  ctx.scale(outputWidth / width, outputHeight / height);
+  ctx.scale(scale, scale);
 
   const navy = "#082d61";
   const gold = "#d59a21";
@@ -407,10 +406,9 @@ const downloadEmployeeIdCard = async (employee) => {
     ctx.fillText(line.trimEnd(), x, y);
   };
 
-  const logo = await loadImg(instituteLogo).catch(() => null);
+  const logo = await loadImg(idCardLogo).catch(() => null);
 
   const infoRows = [
-    ["Name", employee.name, User],
     ["Email", employee.email, Mail],
     ["Phone Number", employee.phone, Phone],
     ["Designation", employee.roleLabel, IdCard],
@@ -448,58 +446,57 @@ const downloadEmployeeIdCard = async (employee) => {
   ctx.clip();
 
   ctx.fillStyle = navy;
-  ctx.fillRect(0, 0, width, 120);
+  ctx.fillRect(0, 0, width, 176);
   ctx.fillStyle = gold;
   ctx.beginPath();
-  ctx.ellipse(width / 2, 24 + 150, 380, 150, archTilt, 0, Math.PI * 2);
+  ctx.ellipse(width / 2, 130, width * 0.905, 100, archTilt, 0, Math.PI * 2);
   ctx.fill();
   ctx.fillStyle = white;
   ctx.beginPath();
-  ctx.ellipse(width / 2, 34 + 150, 380, 150, archTilt, 0, Math.PI * 2);
+  ctx.ellipse(width / 2, 184, width * 0.905, 150, archTilt, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.fillStyle = navy;
-  ctx.fillRect(0, height - 120, width, 120);
+  ctx.fillRect(0, height - 176, width, 176);
   ctx.fillStyle = gold;
   ctx.beginPath();
-  ctx.ellipse(width / 2, height - 18 - 150, 380, 150, -archTilt, 0, Math.PI * 2);
+  ctx.ellipse(width / 2, height - 168, width * 0.905, 150, -archTilt, 0, Math.PI * 2);
   ctx.fill();
   ctx.fillStyle = white;
   ctx.beginPath();
-  ctx.ellipse(width / 2, height - 28 - 150, 380, 150, -archTilt, 0, Math.PI * 2);
+  ctx.ellipse(width / 2, height - 178, width * 0.905, 150, -archTilt, 0, Math.PI * 2);
   ctx.fill();
 
   if (logo) {
     ctx.globalAlpha = 0.05;
-    ctx.drawImage(logo, 10, 420, 130, 130);
-    ctx.drawImage(logo, 280, 420, 130, 130);
+    ctx.drawImage(logo, 98, height - 240, 144, 144);
     ctx.globalAlpha = 1;
   }
   ctx.restore();
 
   // ── logo + branding ───────────────────────────────────
   if (logo) {
-    ctx.drawImage(logo, 136, 50, 60, 60);
+    ctx.drawImage(logo, 85, 49, 62, 62);
   }
   ctx.textAlign = "left";
   ctx.fillStyle = navy;
-  ctx.letterSpacing = "4px";
-  ctx.font = "900 26px Georgia, 'Times New Roman', serif";
-  ctx.fillText("NITE", 208, 80);
+  ctx.letterSpacing = "3.4px";
+  ctx.font = "900 24px Georgia, 'Times New Roman', serif";
+  ctx.fillText("NITE", 163, 68);
   ctx.letterSpacing = "0px";
-  ctx.font = "700 10px Georgia, 'Times New Roman', serif";
-  wrapText("NAWAB INSTITUTE OF TECHNICAL EDUCATION", 208, 95, 158, 12, 2);
+  ctx.font = "700 9.5px Georgia, 'Times New Roman', serif";
+  wrapText("NAWAB INSTITUTE OF TECHNICAL EDUCATION", 163, 81, 150, 11, 2);
 
   ctx.strokeStyle = gold;
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.moveTo(208, 116);
-  ctx.lineTo(283, 116);
-  ctx.moveTo(303, 116);
-  ctx.lineTo(370, 116);
+  ctx.moveTo(163, 101);
+  ctx.lineTo(230, 101);
+  ctx.moveTo(248, 101);
+  ctx.lineTo(309, 101);
   ctx.stroke();
   ctx.save();
-  ctx.translate(293, 116);
+  ctx.translate(239, 101);
   ctx.rotate(Math.PI / 4);
   ctx.fillStyle = gold;
   ctx.fillRect(-3, -3, 6, 6);
@@ -509,29 +506,29 @@ const downloadEmployeeIdCard = async (employee) => {
   ctx.strokeStyle = gold;
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.moveTo(24, 134);
-  ctx.lineTo(96, 134);
+  ctx.moveTo(92, 143);
+  ctx.lineTo(112, 143);
   ctx.stroke();
   ctx.fillStyle = navy;
-  roundRect(104, 122, 212, 28, 10);
+  roundRect(122, 129, 151, 28, 8);
   ctx.fill();
   ctx.fillStyle = white;
-  ctx.font = "900 14px Arial";
+  ctx.font = "900 11px Arial";
   ctx.textAlign = "center";
-  ctx.fillText("EMPLOYEE ID CARD", width / 2, 141);
+  ctx.fillText("EMPLOYEE ID CARD", 197.5, 147);
   ctx.strokeStyle = gold;
   ctx.beginPath();
-  ctx.moveTo(324, 134);
-  ctx.lineTo(396, 134);
+  ctx.moveTo(283, 143);
+  ctx.lineTo(303, 143);
   ctx.stroke();
 
   // ── circular photo ────────────────────────────────────
   const photoCX = width / 2;
-  const photoCY = 262;
-  const photoR = 70;
+  const photoCY = 226;
+  const photoR = 53;
 
   ctx.beginPath();
-  ctx.arc(photoCX, photoCY, 78, 0, Math.PI * 2);
+  ctx.arc(photoCX, photoCY, 59, 0, Math.PI * 2);
   ctx.fillStyle = gold;
   ctx.fill();
 
@@ -550,9 +547,9 @@ const downloadEmployeeIdCard = async (employee) => {
       ctx.fillStyle = "#f5f8fc";
       ctx.fill();
       ctx.fillStyle = navy;
-      ctx.font = "900 32px Arial";
+      ctx.font = "900 26px Arial";
       ctx.textAlign = "center";
-      ctx.fillText(getEmployeeInitials(employee.name), photoCX, photoCY + 12);
+      ctx.fillText(getEmployeeInitials(employee.name), photoCX, photoCY + 9);
     }
   } else {
     ctx.beginPath();
@@ -560,70 +557,70 @@ const downloadEmployeeIdCard = async (employee) => {
     ctx.fillStyle = "#f5f8fc";
     ctx.fill();
     ctx.fillStyle = navy;
-    ctx.font = "900 32px Arial";
+    ctx.font = "900 26px Arial";
     ctx.textAlign = "center";
-    ctx.fillText(getEmployeeInitials(employee.name), photoCX, photoCY + 12);
+    ctx.fillText(getEmployeeInitials(employee.name), photoCX, photoCY + 9);
   }
 
   // ── name ──────────────────────────────────────────────
   ctx.fillStyle = navy;
-  ctx.font = "900 17px Arial";
+  ctx.font = "900 14px Arial";
   ctx.textAlign = "center";
   ctx.letterSpacing = "1px";
-  ctx.fillText(String(employee.name || "").toUpperCase(), width / 2, 366);
+  ctx.fillText(String(employee.name || "").toUpperCase(), width / 2, 305);
   ctx.letterSpacing = "0px";
 
   // ── divider ───────────────────────────────────────────
-  const divY = 384;
+  const divY = 323;
   ctx.strokeStyle = gold;
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.moveTo(20, divY);
-  ctx.lineTo(192, divY);
+  ctx.lineTo(157, divY);
   ctx.stroke();
   ctx.save();
-  ctx.translate(210, divY);
+  ctx.translate(170, divY);
   ctx.rotate(Math.PI / 4);
   ctx.fillStyle = gold;
-  ctx.fillRect(-5, -5, 10, 10);
+  ctx.fillRect(-4, -4, 8, 8);
   ctx.restore();
   ctx.beginPath();
-  ctx.moveTo(228, divY);
-  ctx.lineTo(400, divY);
+  ctx.moveTo(183, divY);
+  ctx.lineTo(320, divY);
   ctx.stroke();
 
   // ── info rows ─────────────────────────────────────────
-  let infoY = 404;
+  let infoY = 338;
   infoRows.forEach(([label, value, icon]) => {
-    drawIconBadge(icon, 32, infoY + 11, 11, 13);
+    drawIconBadge(icon, 44, infoY + 11, 12, 12);
 
     ctx.fillStyle = navy;
-    ctx.font = "800 9px Arial";
+    ctx.font = "800 8.5px Arial";
     ctx.textAlign = "left";
-    ctx.fillText(label.toUpperCase(), 52, infoY + 7);
+    ctx.fillText(label.toUpperCase(), 64, infoY + 7);
 
     ctx.fillStyle = slate900;
-    ctx.font = "700 12px Arial";
-    wrapText(value || "-", 52, infoY + 21, 350, 14, 1);
+    ctx.font = "700 11px Arial";
+    wrapText(value || "-", 64, infoY + 21, 210, 13, 1);
 
-    infoY += 32;
+    infoY += 29;
   });
 
   // ── signature ─────────────────────────────────────────
-  const sigY = 578;
+  const sigY = 452;
   ctx.strokeStyle = slate900;
   ctx.lineWidth = 0.8;
   ctx.beginPath();
-  ctx.moveTo(240, sigY);
-  ctx.lineTo(400, sigY);
+  ctx.moveTo(214, sigY);
+  ctx.lineTo(305, sigY);
   ctx.stroke();
   ctx.fillStyle = slate900;
-  ctx.font = "700 12px Arial";
+  ctx.font = "700 10px Arial";
   ctx.textAlign = "center";
-  ctx.fillText("Authorized Signature", 320, sigY + 16);
+  ctx.fillText("Authorized Signature", 260, sigY + 15);
   ctx.fillStyle = slate500;
-  ctx.font = "600 10px Arial";
-  ctx.fillText("(Director / Principal)", 320, sigY + 28);
+  ctx.font = "600 8px Arial";
+  ctx.fillText("(Director / Principal)", 260, sigY + 26);
 
   // ── card border ───────────────────────────────────────
   ctx.strokeStyle = gold + "66";

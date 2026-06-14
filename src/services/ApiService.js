@@ -74,6 +74,7 @@ apiClient.interceptors.response.use(
 			error.response?.data?.detail ||
 			error.message ||
 			"Something went wrong!";
+		const suppressErrorToast = Boolean(error.config?.suppressErrorToast);
 		if (axios.isAxiosError(error)) {
 			console.log("Error....", message);
 
@@ -88,7 +89,7 @@ apiClient.interceptors.response.use(
 						window.location.pathname = "/login";
 					}, 1000);
 				}
-			} else {
+			} else if (!suppressErrorToast) {
 				console.log("first");
 				toast.error(message, { id: "errorMessageToast" });
 			}
@@ -107,6 +108,7 @@ export const callApi = async ({
   params = null,
   headers = {},
   responseType,
+  suppressErrorToast = false,
 }) => {
 	const isFormData =
 		typeof FormData !== "undefined" && data instanceof FormData;
@@ -117,6 +119,7 @@ export const callApi = async ({
 		data,
 		params,
 		responseType,
+		suppressErrorToast,
 		headers: {
 			...headers,
 			...(isFormData ? {} : {}),

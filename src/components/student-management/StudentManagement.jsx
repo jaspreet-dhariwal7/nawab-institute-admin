@@ -24,7 +24,7 @@ import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import Pagination from "../common/Pagination.jsx";
 import { callApi } from "../../services/ApiService.js";
-import instituteLogo from "../../assets/nite-logo.jpg";
+import idCardLogo from "../../assets/id-card-logo.png";
 import Loader from "../common/Loader.jsx";
 import NoDataFound from "../common/NoDataFound.jsx";
 import StudentResultModal from "./StudentResultModal.jsx";
@@ -78,6 +78,41 @@ const getStudentInitials = (name) => {
     .join("");
 
   return initials || "S";
+};
+
+const getResultErrorMessage = (data) => {
+  if (!data) return "Unable to load result. Please try again.";
+  if (typeof data === "string") return data;
+  if (Array.isArray(data)) return data.map((item) => getResultErrorMessage(item)).join(" ");
+  if (typeof data !== "object") return String(data);
+
+  if (data.detail || data.message || data.error) {
+    return String(data.detail || data.message || data.error);
+  }
+
+  return Object.entries(data)
+    .map(([key, value]) => {
+      const message = Array.isArray(value)
+        ? value.map((item) => getResultErrorMessage(item)).join(" ")
+        : typeof value === "object"
+          ? getResultErrorMessage(value)
+          : String(value);
+
+      return `${key}: ${message}`;
+    })
+    .join(" ");
+};
+
+const normalizeResultMarks = (data) => {
+  const list = Array.isArray(data) ? data : data?.subjects_marks || data?.marks || data?.results || [];
+
+  return list
+    .map((mark) => ({
+      subject: mark?.subject || mark?.subject_name || mark?.name || "",
+      obtainedMarks: mark?.obtained_marks ?? mark?.obtainedMarks ?? mark?.marks ?? mark?.score ?? 0,
+      totalMarks: mark?.total_marks ?? mark?.totalMarks ?? 100,
+    }))
+    .filter((mark) => mark.subject);
 };
 
 const formatDate = (value) => {
@@ -213,7 +248,7 @@ export const StudentIdCardPreview = ({ student }) => {
         </div>
 
         <img
-          src={instituteLogo}
+          src={idCardLogo}
           alt=""
           aria-hidden="true"
           className="pointer-events-none absolute bottom-20 right-2 h-44 w-44 object-contain opacity-[0.06]"
@@ -221,7 +256,7 @@ export const StudentIdCardPreview = ({ student }) => {
 
         <div className="relative flex flex-1 flex-col px-5 pb-10 pt-13">
           <div className="flex items-center justify-center gap-3">
-            <img src={instituteLogo} alt="Institute logo" className="h-20 w-20 shrink-0 object-contain" />
+            <img src={idCardLogo} alt="Institute logo" className="h-20 w-20 shrink-0 object-contain" />
             <div className="min-w-0">
               <h2 className="font-serif text-[34px] font-black leading-none tracking-[0.14em] text-[#082d61]">NITE</h2>
               <p className="mt-1 max-w-[200px] font-serif text-[12px] font-bold uppercase leading-snug text-[#082d61]">
@@ -378,7 +413,7 @@ const downloadStudentIdCard = async (student) => {
     ctx.fillText(line.trimEnd(), x, y);
   };
 
-  const logo = await loadImg(instituteLogo).catch(() => null);
+  const logo = await loadImg(idCardLogo).catch(() => null);
 
   const { topDetails, infoRows } = getStudentIdCardDetails(student);
   const loadIcon = (Icon) =>
@@ -670,6 +705,10 @@ export default function StudentManagement() {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [studentToDelete, setStudentToDelete] = useState(null);
   const [showResultModal, setShowResultModal] = useState(false);
+  const [resultSubjects, setResultSubjects] = useState([]);
+  const [resultMarks, setResultMarks] = useState([]);
+  const [resultLoading, setResultLoading] = useState(false);
+  const [resultError, setResultError] = useState("");
   const [studentDetailLoading, setStudentDetailLoading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [page, setPage] = useState(1);
@@ -769,6 +808,36 @@ export default function StudentManagement() {
   const closeDeleteModal = () => {
     if (!deleting) {
       setStudentToDelete(null);
+    }
+  };
+
+  const openResultModal = async () => {
+    if (!selectedStudent?.id) return;
+
+    setShowResultModal(true);
+    setResultError("");
+    setResultSubjects([]);
+    setResultMarks([]);
+
+    try {
+      setResultLoading(true);
+      const response = await callApi({
+        url: `/students/${selectedStudent.id}/result/`,
+        method: "get",
+      });
+      const marks = normalizeResultMarks(response);
+
+      if (marks.length === 0) {
+        setResultError("No result found for this student.");
+        return;
+      }
+
+      setResultSubjects(marks.map((mark) => mark.subject));
+      setResultMarks(marks.map((mark) => String(mark.obtainedMarks ?? 0)));
+    } catch (error) {
+      setResultError(getResultErrorMessage(error.response?.data));
+    } finally {
+      setResultLoading(false);
     }
   };
 
@@ -889,11 +958,12 @@ export default function StudentManagement() {
                   <label className="block text-[12px] font-bold text-on-surface-variant sm:pt-2">Profile Photo</label>
                   <button
                     type="button"
-                    onClick={() => setShowResultModal(true)}
-                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-[12px] font-bold text-on-primary shadow-sm transition-opacity hover:opacity-90 sm:absolute sm:right-0 sm:top-0"
+                    onClick={openResultModal}
+                    disabled={resultLoading}
+                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-3 py-2 text-[12px] font-bold text-on-primary shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70 sm:absolute sm:right-0 sm:top-0"
                   >
                     <Save className="h-3.5 w-3.5" />
-                    View Result
+                    {resultLoading ? "Loading Result..." : "View Result"}
                   </button>
                 </div>
                 <div className="mb-3 grid h-28 w-28 place-items-center overflow-hidden rounded-full border border-outline-variant bg-slate-50 text-[26px] font-extrabold text-primary">
@@ -965,7 +1035,11 @@ export default function StudentManagement() {
         <StudentResultModal
           mode="view"
           student={resultStudent}
+          subjects={resultSubjects}
+          marks={resultMarks}
           onClose={() => setShowResultModal(false)}
+          loading={resultLoading}
+          error={resultError}
         />
       )}
     </div>

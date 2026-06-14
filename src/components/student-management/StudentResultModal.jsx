@@ -1,12 +1,5 @@
 import { ClipboardList, Download, FileText, PieChart, Save, ShieldCheck, X } from "lucide-react";
-
-const DEFAULT_SUBJECTS = [
-  "Internet Fundamentals",
-  "Web Browsing Techniques",
-  "Email Creation & Management",
-  "Online Safety & Security",
-  "Cloud Storage & Online Communication",
-];
+import { RESULT_SUBJECTS } from "./resultSubjects.js";
 
 const VIEW_MARKS = [82, 91, 76, 88, 93];
 
@@ -38,12 +31,11 @@ const SummaryCard = ({ icon: Icon, label, value }) => (
   </div>
 );
 
-export default function StudentResultModal({ mode = "generate", student, marks, onMarksChange, onClose, onPublish }) {
+export default function StudentResultModal({ mode = "generate", student, marks, subjects = RESULT_SUBJECTS, onMarksChange, onClose, onPublish, publishing = false, loading = false, error = "" }) {
   const isGenerate = mode === "generate";
-  const subjects = DEFAULT_SUBJECTS;
-  const visibleMarks = isGenerate ? marks : VIEW_MARKS;
+  const visibleMarks = marks?.length ? marks : VIEW_MARKS;
   const totalMarks = subjects.length * 100;
-  const obtainedMarks = visibleMarks.reduce((sum, mark) => sum + Number(mark || 0), 0);
+  const obtainedMarks = subjects.reduce((sum, _subject, index) => sum + Number(visibleMarks[index] || 0), 0);
   const percentage = totalMarks ? Math.round((obtainedMarks / totalMarks) * 100) : 0;
 
   return (
@@ -54,6 +46,7 @@ export default function StudentResultModal({ mode = "generate", student, marks, 
           <button
             type="button"
             onClick={onClose}
+            disabled={publishing}
             className="grid h-9 w-9 place-items-center rounded-lg text-primary hover:bg-surface-container"
             aria-label="Close result modal"
           >
@@ -92,6 +85,18 @@ export default function StudentResultModal({ mode = "generate", student, marks, 
         <div className="space-y-6 px-7 py-6">
           <h3 className="text-[18px] font-extrabold text-primary">Subject List & Marks</h3>
 
+          {loading && (
+            <div className="rounded-lg border border-outline-variant bg-surface-container-low px-4 py-3 text-[13px] font-semibold text-primary">
+              Loading result...
+            </div>
+          )}
+
+          {error && (
+            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-[13px] font-semibold text-red-700">
+              {error}
+            </div>
+          )}
+
           <div className="overflow-hidden rounded-lg border border-outline-variant">
             <table className="w-full min-w-[760px] text-left">
               <thead className="bg-surface-container-low">
@@ -114,9 +119,10 @@ export default function StudentResultModal({ mode = "generate", student, marks, 
                           type="number"
                           min="0"
                           max="100"
-                          value={marks[index]}
-                          onChange={(event) => onMarksChange(index, event.target.value)}
-                          className="w-full max-w-[210px] rounded-md border border-outline-variant px-3 py-2 text-[14px] font-semibold text-primary outline-none focus:border-primary"
+                          value={marks[index] ?? "0"}
+                          disabled={publishing}
+                          onChange={(event) => onMarksChange?.(index, event.target.value)}
+                          className="w-full max-w-[210px] rounded-md border border-outline-variant px-3 py-2 text-[14px] font-semibold text-primary outline-none focus:border-primary disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
                         />
                       ) : (
                         visibleMarks[index]
@@ -172,17 +178,19 @@ export default function StudentResultModal({ mode = "generate", student, marks, 
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex items-center justify-center rounded-lg border border-outline-variant bg-white px-6 py-3 text-[14px] font-bold text-primary transition-colors hover:bg-surface-container"
+              disabled={publishing}
+              className="inline-flex items-center justify-center rounded-lg border border-outline-variant bg-white px-6 py-3 text-[14px] font-bold text-primary transition-colors hover:bg-surface-container disabled:cursor-not-allowed disabled:opacity-60"
             >
               Cancel
             </button>
             <button
               type="button"
               onClick={onPublish}
-              className="inline-flex items-center justify-center gap-3 rounded-lg bg-primary px-6 py-3 text-[14px] font-bold text-on-primary shadow-sm transition-opacity hover:opacity-90"
+              disabled={publishing}
+              className="inline-flex items-center justify-center gap-3 rounded-lg bg-primary px-6 py-3 text-[14px] font-bold text-on-primary shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Save className="h-5 w-5" />
-              Publish Result
+              {publishing ? "Publishing..." : "Publish Result"}
             </button>
           </div>
         )}
