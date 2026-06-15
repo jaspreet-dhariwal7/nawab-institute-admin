@@ -4,7 +4,6 @@ import {
   AlertTriangle,
   CalendarDays,
   Download,
-  Droplet,
   Edit,
   Eye,
   GraduationCap,
@@ -17,7 +16,6 @@ import {
   Search,
   Trash2,
   User,
-  VenusAndMars,
   X,
 } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -25,6 +23,7 @@ import toast from "react-hot-toast";
 import Pagination from "../common/Pagination.jsx";
 import { callApi } from "../../services/ApiService.js";
 import idCardLogo from "../../assets/id-card-logo.png";
+import employeeStampedSign from "../../assets/employee-stamped-sign.png";
 import Loader from "../common/Loader.jsx";
 import NoDataFound from "../common/NoDataFound.jsx";
 import StudentResultModal from "./StudentResultModal.jsx";
@@ -200,12 +199,10 @@ const getStudentIdCardDetails = (student) => {
 
   const infoRows = [
     ["Date of Birth", formatDate(student.session), CalendarDays],
-    ["Gender", student.gender, VenusAndMars],
-    ["Blood Group", student.bloodGroup, Droplet],
     ["Address", student.address, House],
     ["Phone Number", student.phone, Phone],
     ["Email ID", student.email, Mail],
-  ].filter(([label, value]) => value || (label !== "Gender" && label !== "Blood Group"));
+  ];
 
   return { topDetails, infoRows };
 };
@@ -314,24 +311,26 @@ export const StudentIdCardPreview = ({ student }) => {
             <span className="h-px flex-1 bg-[#d59a21]" />
           </div>
 
-          <div className="space-y-1.5">
-            {infoRows.map(([label, value, Icon]) => (
-              <div key={label} className="grid grid-cols-[24px_110px_8px_1fr] items-start gap-x-2 text-[12px] leading-tight">
-                <span className="grid h-6 w-6 place-items-center rounded-full bg-[#082d61] text-white">
-                  <Icon className="h-3 w-3" />
-                </span>
-                <span className="pt-1 text-[10px] font-extrabold uppercase tracking-wide text-[#082d61]">{label}</span>
-                <span className="pt-0.5 font-black text-[#082d61]">:</span>
-                <span className="break-words pt-0.5 font-bold text-slate-900">{value || "-"}</span>
-              </div>
-            ))}
-          </div>
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0 flex-1 space-y-1.5">
+              {infoRows.map(([label, value, Icon]) => (
+                <div key={label} className="flex items-start gap-2">
+                  <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[#082d61] text-white">
+                    <Icon className="h-3 w-3" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-[8.5px] font-extrabold uppercase tracking-wide text-[#082d61]">{label}</p>
+                    <p className="break-words text-[11px] font-bold leading-tight text-slate-900">{value || "-"}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
 
-          <div className="mt-auto flex justify-end pt-3">
-            <div className="w-44 text-center">
-              <div className="mx-auto w-36 border-t border-slate-800" />
-              <p className="mt-1 text-[12px] font-bold text-slate-900">Authorized Signature</p>
-              <p className="text-[10px] font-semibold text-slate-600">(Director / Principal)</p>
+            <div className="w-36 shrink-0 pt-8 text-center">
+              <img src={employeeStampedSign} alt="Stamped signature" className="mx-auto -mb-1 h-16 w-16 object-contain" />
+              <div className="mx-auto w-28 border-t border-slate-800" />
+              <p className="mt-1 text-[10px] font-bold text-slate-900">Authorized Signature</p>
+              <p className="text-[9px] font-semibold text-slate-600">(Director / Principal)</p>
             </div>
           </div>
         </div>
@@ -414,6 +413,7 @@ const downloadStudentIdCard = async (student) => {
   };
 
   const logo = await loadImg(idCardLogo).catch(() => null);
+  const stampedSign = await loadImg(employeeStampedSign).catch(() => null);
 
   const { topDetails, infoRows } = getStudentIdCardDetails(student);
   const loadIcon = (Icon) =>
@@ -591,43 +591,40 @@ const downloadStudentIdCard = async (student) => {
   ctx.stroke();
 
   // ── info rows ─────────────────────────────────────────
-  // Preview grid: px-5(20) | icon(24) | gap-x-2(8) | label(110) | gap-x-2(8) | colon(8) | gap-x-2(8) | value
-  // Icon center: 20+12=32, label: 52, colon: 52+110+8=170, value: 170+8+8=186
   let infoY = 410;
   infoRows.forEach(([label, value, icon]) => {
-    drawIconBadge(icon, 32, infoY + 2, 11, 13);
+    drawIconBadge(icon, 44, infoY + 11, 12, 12);
 
     ctx.fillStyle = navy;
-    ctx.font = "800 11px Arial";
+    ctx.font = "800 8.5px Arial";
     ctx.textAlign = "left";
-    ctx.fillText(label.toUpperCase(), 52, infoY + 6);
-
-    ctx.fillStyle = navy;
-    ctx.font = "900 12px Arial";
-    ctx.fillText(":", 170, infoY + 6);
+    ctx.fillText(label.toUpperCase(), 64, infoY + 7);
 
     ctx.fillStyle = slate900;
-    ctx.font = "700 13px Arial";
-    wrapText(value || "-", 186, infoY + 6, 214, 15, label === "Address" ? 2 : 1);
+    ctx.font = "700 11px Arial";
+    wrapText(value || "-", 64, infoY + 21, 176, 13, label === "Address" ? 2 : 1);
 
-    infoY += label === "Address" ? 36 : 22;
+    infoY += label === "Address" ? 42 : 33;
   });
 
   // ── signature ─────────────────────────────────────────
-  const sigY = 528;
+  const sigY = 508;
+  if (stampedSign) {
+    ctx.drawImage(stampedSign, 286, sigY - 65, 68, 66);
+  }
   ctx.strokeStyle = slate900;
   ctx.lineWidth = 0.8;
   ctx.beginPath();
-  ctx.moveTo(252, sigY);
-  ctx.lineTo(388, sigY);
+  ctx.moveTo(264, sigY);
+  ctx.lineTo(376, sigY);
   ctx.stroke();
   ctx.fillStyle = slate900;
-  ctx.font = "700 12px Arial";
+  ctx.font = "700 10px Arial";
   ctx.textAlign = "center";
   ctx.fillText("Authorized Signature", 320, sigY + 15);
   ctx.fillStyle = slate500;
-  ctx.font = "600 10px Arial";
-  ctx.fillText("(Director / Principal)", 320, sigY + 27);
+  ctx.font = "600 8px Arial";
+  ctx.fillText("(Director / Principal)", 320, sigY + 26);
 
   // ── card border ───────────────────────────────────────
   ctx.strokeStyle = gold + "66";

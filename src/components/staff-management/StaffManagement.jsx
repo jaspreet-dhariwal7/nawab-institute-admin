@@ -6,6 +6,7 @@ import { cn } from "../../lib/utlis.js";
 import { callApi } from "../../services/ApiService.js";
 import Pagination from "../common/Pagination.jsx";
 import idCardLogo from "../../assets/id-card-logo.png";
+import employeeStampedSign from "../../assets/employee-stamped-sign.png";
 import Loader from "../common/Loader.jsx";
 import NoDataFound from "../common/NoDataFound.jsx";
 
@@ -297,7 +298,7 @@ const EmployeeIdCardPreview = ({ employee }) => {
           </div>
 
           {/* Photo - circular */}
-          <div className="mt-4 grid h-28 w-28 shrink-0 place-items-center overflow-hidden rounded-full border-[3px] border-[#d59a21] bg-[#f5f8fc] text-[26px] font-black text-[#082d61]">
+          <div className="mt-4 grid h-28 w-28 shrink-0 place-items-center overflow-hidden rounded-full border-2 border-[#d59a21] bg-[#f5f8fc] text-[26px] font-black text-[#082d61]">
             {employee.profilePhotoUrl ? (
               <img src={employee.profilePhotoUrl} alt={employee.name} className="h-full w-full object-cover" />
             ) : (
@@ -309,6 +310,9 @@ const EmployeeIdCardPreview = ({ employee }) => {
           <h3 className="mt-2.5 text-center text-[14px] font-black uppercase tracking-wide text-[#082d61]">
             {employee.name || "-"}
           </h3>
+          <p className="mt-1 text-center text-[10px] font-extrabold uppercase tracking-wide text-slate-900">
+            Employee ID: {employee.employeeId || "-"}
+          </p>
 
           {/* Divider */}
           <div className="my-2 flex w-full items-center gap-2">
@@ -333,8 +337,9 @@ const EmployeeIdCardPreview = ({ employee }) => {
           </div>
 
           {/* Signature */}
-          <div className="-mt-3 flex w-full justify-end">
+          <div className="-mt-16 flex w-full justify-end">
             <div className="w-36 text-center">
+              <img src={employeeStampedSign} alt="Stamped signature" className="mx-auto -mb-1 h-16 w-16 object-contain" />
               <div className="mx-auto w-28 border-t border-slate-800" />
               <p className="mt-1 text-[10px] font-bold text-slate-900">Authorized Signature</p>
               <p className="text-[9px] font-semibold text-slate-600">(Director / Principal)</p>
@@ -407,6 +412,7 @@ const downloadEmployeeIdCard = async (employee) => {
   };
 
   const logo = await loadImg(idCardLogo).catch(() => null);
+  const stampedSign = await loadImg(employeeStampedSign).catch(() => null);
 
   const infoRows = [
     ["Email", employee.email, Mail],
@@ -525,7 +531,7 @@ const downloadEmployeeIdCard = async (employee) => {
   // ── circular photo ────────────────────────────────────
   const photoCX = width / 2;
   const photoCY = 226;
-  const photoR = 53;
+  const photoR = 56;
 
   ctx.beginPath();
   ctx.arc(photoCX, photoCY, 59, 0, Math.PI * 2);
@@ -569,9 +575,12 @@ const downloadEmployeeIdCard = async (employee) => {
   ctx.letterSpacing = "1px";
   ctx.fillText(String(employee.name || "").toUpperCase(), width / 2, 305);
   ctx.letterSpacing = "0px";
+  ctx.fillStyle = slate900;
+  ctx.font = "800 10px Arial";
+  ctx.fillText(`Employee ID: ${employee.employeeId || "-"}`.toUpperCase(), width / 2, 322);
 
   // ── divider ───────────────────────────────────────────
-  const divY = 323;
+  const divY = 337;
   ctx.strokeStyle = gold;
   ctx.lineWidth = 1;
   ctx.beginPath();
@@ -590,7 +599,7 @@ const downloadEmployeeIdCard = async (employee) => {
   ctx.stroke();
 
   // ── info rows ─────────────────────────────────────────
-  let infoY = 338;
+  let infoY = 352;
   infoRows.forEach(([label, value, icon]) => {
     drawIconBadge(icon, 44, infoY + 11, 12, 12);
 
@@ -607,7 +616,10 @@ const downloadEmployeeIdCard = async (employee) => {
   });
 
   // ── signature ─────────────────────────────────────────
-  const sigY = 452;
+  const sigY = 434;
+  if (stampedSign) {
+    ctx.drawImage(stampedSign, 226, sigY - 65, 68, 66);
+  }
   ctx.strokeStyle = slate900;
   ctx.lineWidth = 0.8;
   ctx.beginPath();
