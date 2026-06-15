@@ -327,7 +327,7 @@ export const StudentIdCardPreview = ({ student }) => {
             </div>
 
             <div className="w-36 shrink-0 pt-8 text-center">
-              <img src={employeeStampedSign} alt="Stamped signature" className="mx-auto -mb-1 h-16 w-16 object-contain" />
+              <img src={employeeStampedSign} alt="Stamped signature" className="mx-auto -mb-1 h-21 w-21 object-contain" />
               <div className="mx-auto w-28 border-t border-slate-800" />
               <p className="mt-1 text-[10px] font-bold text-slate-900">Authorized Signature</p>
               <p className="text-[9px] font-semibold text-slate-600">(Director / Principal)</p>
