@@ -337,7 +337,7 @@ const EmployeeIdCardPreview = ({ employee }) => {
           </div>
 
           {/* Signature */}
-          <div className="-mt-16 flex w-full justify-end">
+          <div className="-mt-20 flex w-full justify-end">
             <div className="w-36 text-center">
               <img src={employeeStampedSign} alt="Stamped signature" className="mx-auto -mb-1 h-16 w-16 object-contain" />
               <div className="mx-auto w-28 border-t border-slate-800" />
@@ -616,7 +616,7 @@ const downloadEmployeeIdCard = async (employee) => {
   });
 
   // ── signature ─────────────────────────────────────────
-  const sigY = 434;
+  const sigY = 420;
   if (stampedSign) {
     ctx.drawImage(stampedSign, 226, sigY - 65, 68, 66);
   }
