@@ -339,7 +339,7 @@ const EmployeeIdCardPreview = ({ employee }) => {
           {/* Signature */}
           <div className="-mt-28 flex w-full justify-end">
             <div className="w-36 text-center">
-              <img src={employeeStampedSign} alt="Stamped signature" className="mx-auto -mb-1 h-22 w-22 object-contain" />
+              <img src={employeeStampedSign} alt="Stamped signature" className="mx-auto -mb-1 h-23 w-23 object-contain" />
               <div className="mx-auto w-28 border-t border-slate-800" />
               <p className="mt-1 text-[10px] font-bold text-slate-900">Authorized Signature</p>
               <p className="text-[9px] font-semibold text-slate-600">(Director / Principal)</p>
@@ -616,9 +616,9 @@ const downloadEmployeeIdCard = async (employee) => {
   });
 
   // ── signature ─────────────────────────────────────────
-  const sigY = 405;
+  const sigY = 480;
   if (stampedSign) {
-    ctx.drawImage(stampedSign, 226, sigY - 65, 68, 66);
+    ctx.drawImage(stampedSign, 225, sigY - 68, 70, 68);
   }
   ctx.strokeStyle = slate900;
   ctx.lineWidth = 0.8;
