@@ -610,7 +610,7 @@ const downloadStudentIdCard = async (student) => {
   // ── signature ─────────────────────────────────────────
   const sigY = 508;
   if (stampedSign) {
-    ctx.drawImage(stampedSign, 286, sigY - 67, 70, 68);
+    ctx.drawImage(stampedSign, 285, sigY - 75, 75, 75);
   }
   ctx.strokeStyle = slate900;
   ctx.lineWidth = 0.8;

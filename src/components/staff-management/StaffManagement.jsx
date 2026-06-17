@@ -618,7 +618,7 @@ const downloadEmployeeIdCard = async (employee) => {
   // ── signature ─────────────────────────────────────────
   const sigY = 480;
   if (stampedSign) {
-    ctx.drawImage(stampedSign, 225, sigY - 68, 70, 68);
+    ctx.drawImage(stampedSign, 224, sigY - 71, 73, 71);
   }
   ctx.strokeStyle = slate900;
   ctx.lineWidth = 0.8;
