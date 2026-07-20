@@ -128,7 +128,7 @@ const buildStudentPayload = (form, isEdit) => {
   appendPayloadField(payload, "admission_date", form.admissionDate);
   appendPayloadField(payload, "date_of_birth", form.session);
   appendPayloadField(payload, "guardian_name", form.guardianName.trim());
-  if (isEdit) appendPayloadField(payload, "mother_name", form.motherName.trim());
+  appendPayloadField(payload, "mother_name", form.motherName.trim());
   appendPayloadField(payload, "guardian_phone", form.guardianPhone.trim());
   appendPayloadField(payload, "id_proof", form.idProof, { skipEmptyFile });
   appendPayloadField(payload, "highest_qualification", form.highestQualification, { skipEmptyFile });
@@ -143,6 +143,7 @@ const fieldMap = {
   admission_date: "admissionDate",
   session: "session",
   guardian_name: "guardianName",
+  father_name: "guardianName",
   mother_name: "motherName",
   guardian_phone: "guardianPhone",
   id_proof: "idProof",
@@ -238,7 +239,7 @@ const getStudentForm = (student) => ({
   course: getCourseValue(student.course),
   admissionDate: getDateValue(student.admission_date || student.admissionDate),
   session: getDateValue(student.session || student.dob || student.date_of_birth || student.dateOfBirth),
-  guardianName: student.guardian_name || student.guardianName || "",
+  guardianName: student.guardian_name || student.guardianName || student.father_name || student.fatherName || "",
   motherName: student.mother_name || student.motherName || "",
   guardianPhone: student.guardian_phone || student.guardianPhone || "",
   profilePhotoUrl: student.photo || student.profile_photo || student.profilePhoto || "",
@@ -460,7 +461,7 @@ export default function AddStudent() {
     if (!form.idProof && !form.idProofUrl) nextErrors.idProof = "Upload a valid ID proof.";
     if (!form.address.trim()) nextErrors.address = "Address is required.";
     if (form.guardianPhone && !phonePattern.test(form.guardianPhone)) {
-      nextErrors.guardianPhone = isEdit ? "Enter a valid father's phone number." : "Enter a valid guardian phone number.";
+      nextErrors.guardianPhone = "Enter a valid father's phone number.";
     }
 
     return nextErrors;
@@ -732,30 +733,28 @@ export default function AddStudent() {
           </div>
 
           <div>
-            <label className="mb-1.5 block text-[12px] font-bold text-on-surface-variant">{isEdit ? "Father's Name" : "Guardian Name"}</label>
+            <label className="mb-1.5 block text-[12px] font-bold text-on-surface-variant">Father's Name</label>
             <input
               value={form.guardianName}
               onChange={(event) => updateField("guardianName", event.target.value)}
-              placeholder={isEdit ? "Father's full name" : "Parent or guardian name"}
+              placeholder="Father's full name"
               className="w-full rounded-lg border border-outline-variant px-3.5 py-2.5 text-[13px] outline-none focus:border-primary"
             />
           </div>
 
-          {isEdit && (
-            <div>
-              <label className="mb-1.5 block text-[12px] font-bold text-on-surface-variant">Mother's Name</label>
-              <input
-                value={form.motherName}
-                onChange={(event) => updateField("motherName", event.target.value)}
-                placeholder="Mother's full name"
-                className={`w-full rounded-lg border px-3.5 py-2.5 text-[13px] outline-none focus:border-primary ${errors.motherName ? "border-red-500 focus:border-red-500" : "border-outline-variant"}`}
-              />
-              {errors.motherName && <p className="mt-1 text-[11px] text-red-600">{errors.motherName}</p>}
-            </div>
-          )}
+          <div>
+            <label className="mb-1.5 block text-[12px] font-bold text-on-surface-variant">Mother's Name</label>
+            <input
+              value={form.motherName}
+              onChange={(event) => updateField("motherName", event.target.value)}
+              placeholder="Mother's full name"
+              className={`w-full rounded-lg border px-3.5 py-2.5 text-[13px] outline-none focus:border-primary ${errors.motherName ? "border-red-500 focus:border-red-500" : "border-outline-variant"}`}
+            />
+            {errors.motherName && <p className="mt-1 text-[11px] text-red-600">{errors.motherName}</p>}
+          </div>
 
           <div>
-            <label className="mb-1.5 block text-[12px] font-bold text-on-surface-variant">{isEdit ? "Father's Phone" : "Guardian Phone"}</label>
+            <label className="mb-1.5 block text-[12px] font-bold text-on-surface-variant">Father's Phone</label>
             <input
               value={form.guardianPhone}
               onChange={(event) => updateField("guardianPhone", event.target.value)}
