@@ -1,5 +1,6 @@
 import { ClipboardList, Download, FileText, PieChart, Save, ShieldCheck, X } from "lucide-react";
 import { RESULT_SUBJECTS } from "./resultSubjects.js";
+import { downloadCertificatePdf, downloadDmcPdf } from "./resultDocuments.js";
 
 const VIEW_MARKS = [82, 91, 76, 88, 93];
 
@@ -37,6 +38,8 @@ export default function StudentResultModal({ mode = "generate", student, marks, 
   const totalMarks = subjects.length * 100;
   const obtainedMarks = subjects.reduce((sum, _subject, index) => sum + Number(visibleMarks[index] || 0), 0);
   const percentage = totalMarks ? Math.round((obtainedMarks / totalMarks) * 100) : 0;
+  const canDownloadDocuments = !isGenerate && !loading && !error && subjects.length > 0;
+  const documentPayload = { student, subjects, marks: visibleMarks };
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
@@ -129,7 +132,7 @@ export default function StudentResultModal({ mode = "generate", student, marks, 
                       )}
                     </td>
                   </tr>
-                ))}
+                ))}z
               </tbody>
             </table>
           </div>
@@ -151,7 +154,12 @@ export default function StudentResultModal({ mode = "generate", student, marks, 
                     </div>
                     <span className="text-[14px] font-semibold text-primary">Generate DMC (Detailed Marks Card)</span>
                   </div>
-                  <button type="button" className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-3 text-[13px] font-bold text-on-primary shadow-sm transition-opacity hover:opacity-90">
+                  <button
+                    type="button"
+                    onClick={() => downloadDmcPdf(documentPayload)}
+                    disabled={!canDownloadDocuments}
+                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-3 text-[13px] font-bold text-on-primary shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
                     <Download className="h-4 w-4" />
                     Download DMC
                   </button>
@@ -163,7 +171,12 @@ export default function StudentResultModal({ mode = "generate", student, marks, 
                     </div>
                     <span className="text-[14px] font-semibold text-primary">Generate Certificate</span>
                   </div>
-                  <button type="button" className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-3 text-[13px] font-bold text-on-primary shadow-sm transition-opacity hover:opacity-90">
+                  <button
+                    type="button"
+                    onClick={() => downloadCertificatePdf(documentPayload)}
+                    disabled={!canDownloadDocuments}
+                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-3 text-[13px] font-bold text-on-primary shadow-sm transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
                     <Download className="h-4 w-4" />
                     Download Certificate
                   </button>

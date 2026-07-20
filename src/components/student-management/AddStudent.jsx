@@ -16,6 +16,7 @@ const initialForm = {
   admissionDate: "",
   session: "",
   guardianName: "",
+  motherName: "",
   guardianPhone: "",
   highestQualification: null,
   idProof: null,
@@ -127,6 +128,7 @@ const buildStudentPayload = (form, isEdit) => {
   appendPayloadField(payload, "admission_date", form.admissionDate);
   appendPayloadField(payload, "date_of_birth", form.session);
   appendPayloadField(payload, "guardian_name", form.guardianName.trim());
+  if (isEdit) appendPayloadField(payload, "mother_name", form.motherName.trim());
   appendPayloadField(payload, "guardian_phone", form.guardianPhone.trim());
   appendPayloadField(payload, "id_proof", form.idProof, { skipEmptyFile });
   appendPayloadField(payload, "highest_qualification", form.highestQualification, { skipEmptyFile });
@@ -141,6 +143,7 @@ const fieldMap = {
   admission_date: "admissionDate",
   session: "session",
   guardian_name: "guardianName",
+  mother_name: "motherName",
   guardian_phone: "guardianPhone",
   id_proof: "idProof",
   highest_qualification: "highestQualification",
@@ -236,6 +239,7 @@ const getStudentForm = (student) => ({
   admissionDate: getDateValue(student.admission_date || student.admissionDate),
   session: getDateValue(student.session || student.dob || student.date_of_birth || student.dateOfBirth),
   guardianName: student.guardian_name || student.guardianName || "",
+  motherName: student.mother_name || student.motherName || "",
   guardianPhone: student.guardian_phone || student.guardianPhone || "",
   profilePhotoUrl: student.photo || student.profile_photo || student.profilePhoto || "",
   idProofUrl: student.id_proof || student.idProof || "",
@@ -455,7 +459,9 @@ export default function AddStudent() {
     if (!form.highestQualification && !form.highestQualificationUrl) nextErrors.highestQualification = "Upload highest qualification.";
     if (!form.idProof && !form.idProofUrl) nextErrors.idProof = "Upload a valid ID proof.";
     if (!form.address.trim()) nextErrors.address = "Address is required.";
-    if (form.guardianPhone && !phonePattern.test(form.guardianPhone)) nextErrors.guardianPhone = "Enter a valid guardian phone number.";
+    if (form.guardianPhone && !phonePattern.test(form.guardianPhone)) {
+      nextErrors.guardianPhone = isEdit ? "Enter a valid father's phone number." : "Enter a valid guardian phone number.";
+    }
 
     return nextErrors;
   };
@@ -726,17 +732,30 @@ export default function AddStudent() {
           </div>
 
           <div>
-            <label className="mb-1.5 block text-[12px] font-bold text-on-surface-variant">Guardian Name</label>
+            <label className="mb-1.5 block text-[12px] font-bold text-on-surface-variant">{isEdit ? "Father's Name" : "Guardian Name"}</label>
             <input
               value={form.guardianName}
               onChange={(event) => updateField("guardianName", event.target.value)}
-              placeholder="Parent or guardian name"
+              placeholder={isEdit ? "Father's full name" : "Parent or guardian name"}
               className="w-full rounded-lg border border-outline-variant px-3.5 py-2.5 text-[13px] outline-none focus:border-primary"
             />
           </div>
 
+          {isEdit && (
+            <div>
+              <label className="mb-1.5 block text-[12px] font-bold text-on-surface-variant">Mother's Name</label>
+              <input
+                value={form.motherName}
+                onChange={(event) => updateField("motherName", event.target.value)}
+                placeholder="Mother's full name"
+                className={`w-full rounded-lg border px-3.5 py-2.5 text-[13px] outline-none focus:border-primary ${errors.motherName ? "border-red-500 focus:border-red-500" : "border-outline-variant"}`}
+              />
+              {errors.motherName && <p className="mt-1 text-[11px] text-red-600">{errors.motherName}</p>}
+            </div>
+          )}
+
           <div>
-            <label className="mb-1.5 block text-[12px] font-bold text-on-surface-variant">Guardian Phone</label>
+            <label className="mb-1.5 block text-[12px] font-bold text-on-surface-variant">{isEdit ? "Father's Phone" : "Guardian Phone"}</label>
             <input
               value={form.guardianPhone}
               onChange={(event) => updateField("guardianPhone", event.target.value)}
@@ -758,51 +777,52 @@ export default function AddStudent() {
             {errors.address && <p className="mt-1 text-[11px] text-red-600">{errors.address}</p>}
           </div>
 
-          <div>
-            <label className="mb-1.5 block text-[12px] font-bold text-on-surface-variant">ID Proof</label>
-            <div className="mb-3 grid h-28 w-28 place-items-center overflow-hidden rounded-xl border border-outline-variant bg-slate-50 ">
-              {idProofPreview ? (
-                isImageSource(form.idProof || form.idProofUrl) ? (
-                  <img src={idProofPreview} alt="ID preview" className="h-full w-full object-cover" />
+          <div className="grid gap-5 sm:col-span-2 sm:grid-cols-2">
+            <div>
+              <label className="mb-1.5 block text-[12px] font-bold text-on-surface-variant">ID Proof</label>
+              <div className="mb-3 grid h-28 w-28 place-items-center overflow-hidden rounded-xl border border-outline-variant bg-slate-50">
+                {idProofPreview ? (
+                  isImageSource(form.idProof || form.idProofUrl) ? (
+                    <img src={idProofPreview} alt="ID preview" className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="px-2 text-center text-[11px] font-bold uppercase tracking-wide text-slate-400">{form.idProof?.name || getFileNameFromUrl(form.idProofUrl) || "Document"}</span>
+                  )
                 ) : (
-                  <span className="px-2 text-center text-[11px] font-bold uppercase tracking-wide text-slate-400">{form.idProof?.name || getFileNameFromUrl(form.idProofUrl) || "Document"}</span>
-                )
-              ) : (
-                <span className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Upload file</span>
-              )}
+                  <span className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Upload file</span>
+                )}
+              </div>
+              <FilePicker
+                accept=".pdf,.jpg,.jpeg,.png"
+                error={errors.idProof}
+                file={form.idProof}
+                existingLabel={form.idProofUrl ? getExistingFileLabel(form.idProofUrl, "Existing ID proof uploaded") : ""}
+                onChange={(file) => updateField("idProof", file)}
+              />
+              {errors.idProof && <p className="mt-1 text-[11px] text-red-600">{errors.idProof}</p>}
             </div>
-            <FilePicker
-              accept=".pdf,.jpg,.jpeg,.png"
-              error={errors.idProof}
-              file={form.idProof}
-              existingLabel={form.idProofUrl ? getExistingFileLabel(form.idProofUrl, "Existing ID proof uploaded") : ""}
-              onChange={(file) => updateField("idProof", file)}
-            />
-            {errors.idProof && <p className="mt-1 text-[11px] text-red-600">{errors.idProof}</p>}
-          </div>
-
 
             <div>
-            <label className="mb-1.5 block text-[12px] font-bold text-on-surface-variant">Highest Qualification</label>
-            <div className="mb-3 grid h-28 w-28 place-items-center overflow-hidden rounded-xl border border-outline-variant bg-slate-50 ">
-              {qualificationPreview ? (
-                isImageSource(form.highestQualification || form.highestQualificationUrl) ? (
-                  <img src={qualificationPreview} alt="Qualification preview" className="h-full w-full object-cover" />
+              <label className="mb-1.5 block text-[12px] font-bold text-on-surface-variant">Highest Qualification</label>
+              <div className="mb-3 grid h-28 w-28 place-items-center overflow-hidden rounded-xl border border-outline-variant bg-slate-50">
+                {qualificationPreview ? (
+                  isImageSource(form.highestQualification || form.highestQualificationUrl) ? (
+                    <img src={qualificationPreview} alt="Qualification preview" className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="px-2 text-center text-[11px] font-bold uppercase tracking-wide text-slate-400">{form.highestQualification?.name || getFileNameFromUrl(form.highestQualificationUrl) || "Document"}</span>
+                  )
                 ) : (
-                  <span className="px-2 text-center text-[11px] font-bold uppercase tracking-wide text-slate-400">{form.highestQualification?.name || getFileNameFromUrl(form.highestQualificationUrl) || "Document"}</span>
-                )
-              ) : (
-                <span className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Upload file</span>
-              )}
+                  <span className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Upload file</span>
+                )}
+              </div>
+              <FilePicker
+                accept=".pdf,.jpg,.jpeg,.png"
+                error={errors.highestQualification}
+                file={form.highestQualification}
+                existingLabel={form.highestQualificationUrl ? getExistingFileLabel(form.highestQualificationUrl, "Existing qualification uploaded") : ""}
+                onChange={(file) => updateField("highestQualification", file)}
+              />
+              {errors.highestQualification && <p className="mt-1 text-[11px] text-red-600">{errors.highestQualification}</p>}
             </div>
-            <FilePicker
-              accept=".pdf,.jpg,.jpeg,.png"
-              error={errors.highestQualification}
-              file={form.highestQualification}
-              existingLabel={form.highestQualificationUrl ? getExistingFileLabel(form.highestQualificationUrl, "Existing qualification uploaded") : ""}
-              onChange={(file) => updateField("highestQualification", file)}
-            />
-            {errors.highestQualification && <p className="mt-1 text-[11px] text-red-600">{errors.highestQualification}</p>}
           </div>
 
          

@@ -44,6 +44,7 @@ const normalizeStudent = (student) => ({
     admissionDate: student.admission_date || student.admissionDate || "",
     session: student.session || student.dob || student.date_of_birth || student.dateOfBirth || "",
     guardianName: student.guardian_name || student.guardianName || student.father_name || student.fatherName || "",
+    motherName: student.mother_name || student.motherName || "",
     guardianPhone: student.guardian_phone || student.guardianPhone || "",
     fatherName: student.father_name || student.fatherName || student.guardian_name || student.guardianName || "",
     address: student.address || "",
@@ -789,9 +790,13 @@ export default function StudentManagement() {
 
   const resultStudent = selectedStudent
     ? {
+        id: selectedStudent.id,
         name: selectedStudent.name,
         rollNumber: selectedStudent.rollNumber,
         dob: selectedStudent.session,
+        session: selectedStudent.session,
+        academicSession: selectedStudent.academicSession,
+        fatherName: selectedStudent.fatherName,
         email: selectedStudent.email,
         phone: selectedStudent.phone,
         courseName: selectedStudent.courseName,
@@ -979,12 +984,15 @@ export default function StudentManagement() {
               <DetailField label="Course" value={selectedStudent.courseName} />
               <DetailField label="Admission Date" value={formatDate(selectedStudent.admissionDate)} />
               <DetailField label="DOB" value={formatDate(selectedStudent.session)} />
-              <DetailField label="Guardian Name" value={selectedStudent.guardianName} />
-              <DetailField label="Guardian Phone" value={selectedStudent.guardianPhone} />
+              <DetailField label="Father's Name" value={selectedStudent.guardianName} />
+              <DetailField label="Mother's Name" value={selectedStudent.motherName} />
+              <DetailField label="Father's Phone" value={selectedStudent.guardianPhone} />
               <DetailField label="Address" value={selectedStudent.address} />
 
-              <DocumentPreview label="ID Proof" url={selectedStudent.idProofUrl} />
-              <DocumentPreview label="Highest Qualification" url={selectedStudent.highestQualificationUrl} />
+              <div className="grid gap-5 sm:col-span-2 sm:grid-cols-2">
+                <DocumentPreview label="ID Proof" url={selectedStudent.idProofUrl} />
+                <DocumentPreview label="Highest Qualification" url={selectedStudent.highestQualificationUrl} />
+              </div>
 
               <StudentIdCardPreview student={selectedStudent} />
             </div>
