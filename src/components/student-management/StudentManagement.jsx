@@ -27,6 +27,7 @@ import employeeStampedSign from "../../assets/employee-stamped-sign.png";
 import Loader from "../common/Loader.jsx";
 import NoDataFound from "../common/NoDataFound.jsx";
 import StudentResultModal from "./StudentResultModal.jsx";
+import { findCourse, getAllCourses } from "./courseOptions.js";
 
 const getCourseName = (course) => {
   if (!course) return "";
@@ -776,26 +777,21 @@ export default function StudentManagement() {
     const fetchStudentDetail = async () => {
       try {
         setStudentDetailLoading(true);
-        const response = await callApi({
-          url: `/students/${selectedStudentId}/`,
-          method: "get",
-        });
+        const [response, courseOptions] = await Promise.all([
+          callApi({
+            url: `/students/${selectedStudentId}/`,
+            method: "get",
+          }),
+          getAllCourses().catch(() => []),
+        ]);
 
         const studentDetail = { ...response };
         const courseId = getCourseId(studentDetail);
+        const selectedCourse = findCourse(courseOptions, courseId);
 
-        if (!getCourseDuration(studentDetail) && courseId) {
-          try {
-            const courseResponse = await callApi({
-              url: `/courses/${courseId}/`,
-              method: "get",
-              suppressErrorToast: true,
-            });
-            studentDetail.courseDuration = courseResponse?.duration || "";
-            studentDetail.courseName = courseResponse?.title || courseResponse?.name || "";
-          } catch {
-            studentDetail.courseDuration = "";
-          }
+        if (selectedCourse) {
+          studentDetail.courseDuration = selectedCourse.duration || getCourseDuration(studentDetail);
+          studentDetail.courseName = selectedCourse.name;
         }
 
         if (isActive) {

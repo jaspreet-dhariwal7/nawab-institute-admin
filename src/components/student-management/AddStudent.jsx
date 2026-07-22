@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Save } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { callApi } from "../../services/ApiService.js";
@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import Loader from "../common/Loader.jsx";
 import StudentResultModal from "./StudentResultModal.jsx";
 import { RESULT_SUBJECTS } from "./resultSubjects.js";
+import { findCourse, getAllCourses, getCourseValue } from "./courseOptions.js";
 
 const initialForm = {
   name: "",
@@ -27,24 +28,6 @@ const initialForm = {
   address: "",
 };
 
-const courses = [
-  { id: 3, name: "Diploma in Computer Application" },
-  { id: 4, name: "Advance Diploma in Computer Application" },
-  { id: 5, name: "Diploma in Business Management" },
-  { id: 6, name: "Diploma in Business Administration" },
-  { id: 7, name: "Diploma in Hardware & Networking" },
-  { id: 8, name: "Diploma in Digital Marketing" },
-  { id: 9, name: "Basic Computers" },
-  { id: 10, name: "Advance Basic Computers" },
-  { id: 11, name: "Tally ERP" },
-  { id: 12, name: "CorelDraw" },
-  { id: 13, name: "Adobe Photoshop" },
-  { id: 14, name: "HTML & Web Designing" },
-  { id: 15, name: "Visual Basic" },
-  { id: 16, name: "Computer Typing" },
-  { id: 17, name: "Internet & Email" },
-];
-
 const useObjectUrl = (file) => {
   const url = useMemo(() => {
     if (!file) return "";
@@ -58,13 +41,6 @@ const useObjectUrl = (file) => {
   }, [url]);
 
   return url;
-};
-
-const getCourseValue = (course) => {
-  if (!course) return "";
-  if (typeof course === "object") return course.id ? String(course.id) : "";
-  const matchedCourse = courses.find((item) => item.name === course || String(item.id) === String(course));
-  return matchedCourse ? String(matchedCourse.id) : String(course);
 };
 
 const generateRollNumber = (sequence) => {
@@ -230,13 +206,13 @@ const getFileNameFromUrl = (url) => {
   }
 };
 
-const getStudentForm = (student) => ({
+const getStudentForm = (student, courses = []) => ({
   ...initialForm,
   name: student.name || "",
   rollNumber: student.roll_number || student.rollNumber || "",
   email: student.email || "",
   phone: student.phone || "",
-  course: getCourseValue(student.course),
+  course: getCourseValue(student.course_id || student.courseId || student.course, courses),
   admissionDate: getDateValue(student.admission_date || student.admissionDate),
   session: getDateValue(student.session || student.dob || student.date_of_birth || student.dateOfBirth),
   guardianName: student.guardian_name || student.guardianName || student.father_name || student.fatherName || "",
@@ -303,9 +279,45 @@ export default function AddStudent() {
   const [loading, setLoading] = useState(false);
   const [studentLoading, setStudentLoading] = useState(false);
   const [rollNumberLoading, setRollNumberLoading] = useState(false);
+  const [courses, setCourses] = useState([]);
+  const [coursesLoading, setCoursesLoading] = useState(false);
+  const coursesRef = useRef([]);
   const profilePreview = useObjectUrl(form.profilePhoto) || form.profilePhotoUrl;
   const idProofPreview = useObjectUrl(form.idProof) || form.idProofUrl;
   const qualificationPreview = useObjectUrl(form.highestQualification) || form.highestQualificationUrl;
+
+  useEffect(() => {
+    let isActive = true;
+
+    const fetchCourses = async () => {
+      try {
+        setCoursesLoading(true);
+        const response = await getAllCourses();
+
+        if (isActive) {
+          coursesRef.current = response;
+          setCourses(response);
+          setForm((current) => ({
+            ...current,
+            course: getCourseValue(current.course, response),
+          }));
+        }
+      } catch {
+        if (isActive) {
+          setCourses([]);
+          toast.error("Unable to load courses.");
+        }
+      } finally {
+        if (isActive) setCoursesLoading(false);
+      }
+    };
+
+    fetchCourses();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!isEdit) {
@@ -348,7 +360,7 @@ export default function AddStudent() {
         });
 
         if (isActive) {
-          setForm(getStudentForm(response));
+          setForm(getStudentForm(response, coursesRef.current));
         }
       } catch {
         if (isActive) {
@@ -519,7 +531,7 @@ export default function AddStudent() {
     }
   };
 
-  const selectedCourse = courses.find((course) => String(course.id) === String(form.course));
+  const selectedCourse = findCourse(courses, form.course);
   const resultStudent = {
     name: form.name,
     rollNumber: form.rollNumber,
@@ -694,11 +706,12 @@ export default function AddStudent() {
             <label className="mb-1.5 block text-[12px] font-bold text-on-surface-variant">Course</label>
             <select
               required
+              disabled={coursesLoading}
               value={form.course}
               onChange={(event) => updateField("course", event.target.value)}
-              className={`h-[42px] w-full rounded-lg border bg-white px-3.5 text-[13px] outline-none focus:border-primary ${errors.course ? "border-red-500 focus:border-red-500" : "border-outline-variant"}`}
+              className={`h-[42px] w-full rounded-lg border bg-white px-3.5 text-[13px] outline-none focus:border-primary disabled:cursor-wait disabled:bg-slate-50 ${errors.course ? "border-red-500 focus:border-red-500" : "border-outline-variant"}`}
             >
-              <option value="">Select course</option>
+              <option value="">{coursesLoading ? "Loading courses..." : "Select course"}</option>
               {courses.map((course) => (
                 <option key={course.id} value={course.id}>
                   {course.name}
