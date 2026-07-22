@@ -34,6 +34,18 @@ const getCourseName = (course) => {
   return String(course);
 };
 
+const getCourseDuration = (student) => {
+  if (student.course_duration || student.courseDuration) return student.course_duration || student.courseDuration;
+  if (student.course && typeof student.course === "object") return student.course.duration || "";
+  return "";
+};
+
+const getCourseId = (student) => {
+  const course = student.course_id || student.courseId || student.course;
+  if (course && typeof course === "object") return course.id || course.pk || "";
+  return /^\d+$/.test(String(course || "")) ? String(course) : "";
+};
+
 const normalizeStudent = (student) => ({
     ...student,
     name: student.name || "",
@@ -41,6 +53,7 @@ const normalizeStudent = (student) => ({
     phone: student.phone || "",
     rollNumber: student.roll_number || student.rollNumber || "",
     courseName: student.course_title || student.course_name || getCourseName(student.course),
+    courseDuration: getCourseDuration(student),
     admissionDate: student.admission_date || student.admissionDate || "",
     session: student.session || student.dob || student.date_of_birth || student.dateOfBirth || "",
     guardianName: student.guardian_name || student.guardianName || student.father_name || student.fatherName || "",
@@ -714,6 +727,7 @@ export default function StudentManagement() {
   const [students, setStudents] = useState([]);
   const [totalStudents, setTotalStudents] = useState(0);
   const [loading, setLoading] = useState(false);
+  const selectedStudentId = selectedStudent?.id;
 
   useEffect(() => {
     let isActive = true;
@@ -755,7 +769,7 @@ export default function StudentManagement() {
   }, [page, pageSize, search]);
 
   useEffect(() => {
-    if (!selectedStudent?.id) return undefined;
+    if (!selectedStudentId) return undefined;
 
     let isActive = true;
 
@@ -763,12 +777,31 @@ export default function StudentManagement() {
       try {
         setStudentDetailLoading(true);
         const response = await callApi({
-          url: `/students/${selectedStudent.id}/`,
+          url: `/students/${selectedStudentId}/`,
           method: "get",
         });
 
+        const studentDetail = { ...response };
+        const courseId = getCourseId(studentDetail);
+
+        if (!getCourseDuration(studentDetail) && courseId) {
+          try {
+            const courseResponse = await callApi({
+              url: `/courses/${courseId}/`,
+              method: "get",
+              suppressErrorToast: true,
+            });
+            studentDetail.courseDuration = courseResponse?.duration || "";
+            studentDetail.courseName = courseResponse?.title || courseResponse?.name || "";
+          } catch {
+            studentDetail.courseDuration = "";
+          }
+        }
+
         if (isActive) {
-          setSelectedStudent((current) => (current?.id === selectedStudent.id ? normalizeStudent({ ...current, ...response }) : current));
+          setSelectedStudent((current) =>
+            current?.id === selectedStudentId ? normalizeStudent({ ...current, ...studentDetail }) : current
+          );
         }
       } catch {
         if (isActive) {
@@ -786,7 +819,7 @@ export default function StudentManagement() {
     return () => {
       isActive = false;
     };
-  }, [selectedStudent?.id]);
+  }, [selectedStudentId]);
 
   const resultStudent = selectedStudent
     ? {
@@ -800,6 +833,7 @@ export default function StudentManagement() {
         email: selectedStudent.email,
         phone: selectedStudent.phone,
         courseName: selectedStudent.courseName,
+        courseDuration: selectedStudent.courseDuration,
         admissionDate: selectedStudent.admissionDate,
         address: selectedStudent.address,
         photoUrl: selectedStudent.avatarUrl,
