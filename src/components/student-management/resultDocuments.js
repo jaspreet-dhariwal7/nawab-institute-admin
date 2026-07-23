@@ -412,9 +412,9 @@ const createQrMatrix = (text) => {
     if ((formatBits >> index) & 1) formatBits ^= 0x537 << (index - 10);
   }
   const finalFormat = ((formatValue << 10) | formatBits) ^ 0x5412;
-  const format = getBits(finalFormat, 15);
+  const format = getBits(finalFormat, 15).reverse();
   const a = [[8, 0], [8, 1], [8, 2], [8, 3], [8, 4], [8, 5], [8, 7], [8, 8], [7, 8], [5, 8], [4, 8], [3, 8], [2, 8], [1, 8], [0, 8]];
-  const b = [[size - 1, 8], [size - 2, 8], [size - 3, 8], [size - 4, 8], [size - 5, 8], [size - 6, 8], [size - 7, 8], [8, size - 8], [8, size - 7], [8, size - 6], [8, size - 5], [8, size - 4], [8, size - 3], [8, size - 2], [8, size - 1]];
+  const b = [[size - 1, 8], [size - 2, 8], [size - 3, 8], [size - 4, 8], [size - 5, 8], [size - 6, 8], [size - 7, 8], [size - 8, 8], [8, size - 7], [8, size - 6], [8, size - 5], [8, size - 4], [8, size - 3], [8, size - 2], [8, size - 1]];
   format.forEach((bit, index) => {
     setModule(a[index][0], a[index][1], Boolean(bit));
     setModule(b[index][0], b[index][1], Boolean(bit));
@@ -647,7 +647,7 @@ const drawHeader = (ctx, width, niteLogo, isoLogo, compact = false) => {
   ctx.fillText("TECHNICAL EDUCATION", width / 2, compact ? 184 : 190);
   ctx.fillStyle = ORANGE;
   ctx.font = `${compact ? 21 : 30}px Arial, sans-serif`;
-  ctx.fillText("(AN ISO 9001:2015 CERTIFIED INSTITUTION)", width / 2, compact ? 232 : 235);
+  ctx.fillText("ISO 9001:2015 CERTIFIED INSTITUTION", width / 2, compact ? 232 : 235);
   ctx.fillStyle = NAVY;
   ctx.font = `${compact ? 20 : 28}px Arial, sans-serif`;
   ctx.fillText("NITE is an Education Organization (Since 2026)", width / 2, compact ? 276 : 285);
@@ -665,6 +665,10 @@ const drawHeader = (ctx, width, niteLogo, isoLogo, compact = false) => {
 };
 
 export const downloadCertificatePdf = async ({ student, subjects, marks }) => {
+  if (document.fonts) {
+    await document.fonts.load("70px 'Old English Text MT'");
+  }
+
   const data = getDocData(student, subjects, marks);
   const canvas = document.createElement("canvas");
   canvas.width = 1684;
@@ -688,7 +692,7 @@ export const downloadCertificatePdf = async ({ student, subjects, marks }) => {
   drawCertificateInnerBorder(ctx, canvas.width, canvas.height);
 
   drawImageContain(ctx, niteLogo, 175, 98, 215, 215);
-  drawCertificateNumberBox(ctx, 1330, 92, 270, data.certificateNumber);
+  drawCertificateNumberBox(ctx, 1330, 149, 270, data.certificateNumber);
 
   ctx.textAlign = "center";
   ctx.fillStyle = NAVY;
@@ -696,12 +700,9 @@ export const downloadCertificatePdf = async ({ student, subjects, marks }) => {
   ctx.fillText("NAWAB INSTITUTE OF", canvas.width / 2, 173);
   ctx.fillText("TECHNICAL EDUCATION", canvas.width / 2, 231);
   ctx.fillStyle = RED;
-  ctx.font = "28px Arial, sans-serif";
-  ctx.fillText("(AN ISO 9001:2015 CERTIFIED INSTITUTION)", canvas.width / 2, 281);
-  ctx.fillStyle = NAVY;
-  ctx.font = "24px Georgia, 'Times New Roman', serif";
-  ctx.fillText("NITE is an Education Organization (Since 2026)", canvas.width / 2, 328);
-  ctx.fillText("Opp. Petrol Pump, Adda Udhanwal-143505 (PB.)", canvas.width / 2, 365);
+  ctx.font = "24px Arial, sans-serif";
+  ctx.fillText("CERTIFIED INTERNATIONAL STANDARDS ORGANIZATION", canvas.width / 2, 281);
+  ctx.fillText("ISO 9001:2015", canvas.width / 2, 317);
 
   if (niteLogo) {
     const watermarkSize = 750;
@@ -717,9 +718,9 @@ export const downloadCertificatePdf = async ({ student, subjects, marks }) => {
   }
 
   ctx.fillStyle = NAVY;
-  ctx.font = "bold 52px Georgia, 'Times New Roman', serif";
-  ctx.fillText("CERTIFICATE OF COMPLETION", canvas.width / 2, 455);
-  ctx.font = "28px Georgia, 'Times New Roman', serif";
+  ctx.font = "70px 'Old English Text MT', 'Cloister Black', Georgia, serif";
+  ctx.fillText("Certificate Of Completion", canvas.width / 2, 455);
+  ctx.font = "32px Georgia, 'Times New Roman', serif";
   ctx.fillText("This is to certify that", canvas.width / 2, 510);
 
   const studentNameY = 580;
@@ -779,8 +780,9 @@ export const downloadCertificatePdf = async ({ student, subjects, marks }) => {
     qrSize
   );
   ctx.fillStyle = NAVY;
-  ctx.font = "18px Arial, sans-serif";
-  ctx.fillText("Scan to Verify", footerCenters[0], 1085);
+  ctx.font = "16px Arial, sans-serif";
+  ctx.fillText("For more details and Diploma Verification:", footerCenters[0], 1080);
+  ctx.fillText("www.nawabinstitute.in or scan QR Code", footerCenters[0], 1104);
   drawImageContain(
     ctx,
     isoLogo,
@@ -844,9 +846,9 @@ export const downloadDmcPdf = async ({ student, subjects, marks }) => {
     ctx.fillStyle = "#ffffff";
     ctx.strokeStyle = GOLD;
     ctx.lineWidth = 2;
-    ctx.fillRect(910, 542, 138, 174);
-    ctx.strokeRect(910, 542, 138, 174);
-    drawImageCover(ctx, studentPhoto, 918, 550, 122, 158);
+    ctx.fillRect(916, 542, 138, 174);
+    ctx.strokeRect(916, 542, 138, 174);
+    drawImageCover(ctx, studentPhoto, 924, 550, 122, 158);
   }
 
   const rows = [
@@ -854,15 +856,15 @@ export const downloadDmcPdf = async ({ student, subjects, marks }) => {
     ["Name", student.name],
     ["Father's Name", student.fatherName],
     ["Date of Birth", formatDate(student.dob)],
-    ["Award", student.courseName],
-    ["Course Duration", data.session],
+    ["Course Name", student.courseName],
+    ["Course Duration", formatCourseDuration(student.courseDuration)],
     ["Grade", data.grade],
     ["Result", data.passed ? "PASS" : "FAIL"],
   ];
   ctx.textAlign = "left";
   ctx.strokeStyle = "rgba(201, 130, 8, 0.55)";
   ctx.lineWidth = 1.5;
-  ctx.strokeRect(105, 525, 780, 365);
+  ctx.strokeRect(105, 525, 980, 365);
   rows.forEach(([label, value], index) => {
     const y = 572 + index * 40;
     ctx.fillStyle = NAVY;
@@ -944,13 +946,17 @@ export const downloadDmcPdf = async ({ student, subjects, marks }) => {
   ctx.font = "22px Georgia, serif";
   ctx.fillText(formatDate(new Date()), 170, 1450);
 
-  drawQr(ctx, RESULT_VERIFY_URL, canvas.width / 2 - 62, 1378, 124);
+  drawQr(ctx, RESULT_VERIFY_URL, canvas.width / 2 - 80, 1350, 160);
   ctx.fillStyle = NAVY;
-  ctx.font = "18px Arial, sans-serif";
+  ctx.font = "bold 18px Arial, sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText("Scan to Verify", canvas.width / 2, 1527);
+  ctx.fillText(
+    "For more details and Diploma Verification: www.nawabinstitute.in or scan QR Code",
+    canvas.width / 2,
+    1565
+  );
   drawSignature(ctx, 910, 1435, "Mandeep Singh", "Director", "#123bff", authorisedSignature);
-  drawImageContain(ctx, msmeLogo, 828, 1510, 165, 86);
+  drawImageContain(ctx, msmeLogo, 300, 1397, 165, 86);
 
   ctx.fillStyle = NAVY;
   ctx.font = "18px Arial, sans-serif";
