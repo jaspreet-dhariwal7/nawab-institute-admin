@@ -1,15 +1,13 @@
-import authorisedSignatureUrl from "../../assets/authorised_signature.png";
-
 const RESULT_VERIFY_URL = "https://www.nawabinstitute.in/result";
 const DEFAULT_ACADEMIC_SESSION = "2026-2027";
 const PASS_MARKS = 40;
 const ASSETS = {
-  certificateBackground: "/certificates/certificate_background_borderless.png",
+  certificateBackground: "/certificates/certificate_background_minimal.png",
+  dmcBackground: "/certificates/certificate_background_borderless.png",
   niteLogo: "/certificates/nite_logo_clean.png",
   isoLogo: "/certificates/iso_certified_logo_clean.png",
   msmeLogo: "/certificates/MSME_logo.png",
   niteRedSeal: "/certificates/nite_red_seal.png",
-  authorisedSignature: authorisedSignatureUrl,
 };
 
 const NAVY = "#051a48";
@@ -483,19 +481,8 @@ const canvasToPdf = (canvas, fileName, orientation) => {
   URL.revokeObjectURL(link.href);
 };
 
-const drawSignature = (ctx, x, y, name, title, color = NAVY, signatureImage = null) => {
+const drawSignature = (ctx, x, y, name, title) => {
   ctx.save();
-  if (signatureImage) {
-    drawImageContain(ctx, signatureImage, x - 110, y - 76, 220, 88);
-  } else {
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(x - 70, y - 18);
-    ctx.bezierCurveTo(x - 28, y - 64, x - 20, y + 18, x + 18, y - 30);
-    ctx.bezierCurveTo(x + 38, y - 55, x + 48, y + 3, x + 82, y - 34);
-    ctx.stroke();
-  }
   ctx.strokeStyle = GOLD;
   ctx.lineWidth = 2;
   ctx.beginPath();
@@ -503,11 +490,11 @@ const drawSignature = (ctx, x, y, name, title, color = NAVY, signatureImage = nu
   ctx.lineTo(x + 105, y + 14);
   ctx.stroke();
   ctx.fillStyle = NAVY;
-  ctx.font = "32px Georgia, serif";
+  ctx.font = "22px Georgia, serif";
   ctx.textAlign = "center";
   ctx.fillText(name, x, y + 52);
   ctx.fillStyle = GOLD;
-  ctx.font = "24px Georgia, serif";
+  ctx.font = "16px Georgia, serif";
   ctx.fillText(title, x, y + 85);
   ctx.restore();
 };
@@ -550,7 +537,7 @@ const drawCertificateInnerBorder = (ctx, width, height) => {
 const formatCertificateCourse = (courseName) => {
   const course = String(courseName || "-").trim();
   if (!course || course === "-") return "-";
-  return /^diploma\s+in\s+/i.test(course) ? course.toUpperCase() : `DIPLOMA IN ${course.toUpperCase()}`;
+  return course.replace(/^(?:diploma|certificate)\s+in\s+/i, "").toUpperCase();
 };
 
 const formatCourseDuration = (duration) => {
@@ -564,19 +551,117 @@ const formatCourseDuration = (duration) => {
   return /months?$/i.test(value) ? value : `${value} Months`;
 };
 
-const drawCertificateSignature = (ctx, x, y, name, title, color = NAVY, signatureImage = null) => {
+const formatCertificateDuration = (duration) => {
+  const value = String(duration || "").trim();
+  if (!value) return "-";
+  return value.replace(/\s*months?\s*$/i, "").trim() || "-";
+};
+
+const formatCertificateDate = (value) => {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+
+  return [
+    String(date.getDate()).padStart(2, "0"),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    date.getFullYear(),
+  ].join("-");
+};
+
+const getCertificateCompletionDate = (student) => {
+  const explicitDate =
+    student.courseCompletionDate ||
+    student.course_completion_date ||
+    student.completionDate ||
+    student.completion_date ||
+    student.endDate ||
+    student.end_date;
+
+  if (explicitDate) return explicitDate;
+
+  const monthMatch = String(student.courseDuration || "").match(/(\d+(?:\.\d+)?)/);
+  const monthCount = monthMatch ? Number(monthMatch[1]) : 0;
+  const startDate = new Date(student.admissionDate);
+  if (!Number.isInteger(monthCount) || monthCount <= 0 || Number.isNaN(startDate.getTime())) return "";
+
+  const originalDay = startDate.getDate();
+  const completionDate = new Date(startDate);
+  completionDate.setDate(1);
+  completionDate.setMonth(completionDate.getMonth() + monthCount);
+  const lastDayOfTargetMonth = new Date(
+    completionDate.getFullYear(),
+    completionDate.getMonth() + 1,
+    0
+  ).getDate();
+  completionDate.setDate(Math.min(originalDay, lastDayOfTargetMonth));
+  completionDate.setDate(completionDate.getDate() - 1);
+  return completionDate;
+};
+
+const getFittedFont = (ctx, text, fontTemplate, maxWidth, startSize, minSize = 18) => {
+  let size = startSize;
+  do {
+    ctx.font = fontTemplate(size);
+    if (ctx.measureText(String(text || "-")).width <= maxWidth || size <= minSize) break;
+    size -= 1;
+  } while (size >= minSize);
+  return ctx.font;
+};
+
+const drawDottedValue = (
+  ctx,
+  value,
+  startX,
+  endX,
+  y,
+  { startSize = 25, minSize = 18, bold = false, underline = true } = {}
+) => {
+  const text = String(value || "-");
+  const availableWidth = Math.max(0, endX - startX);
+  const fontTemplate = (size) =>
+    `${bold ? "bold " : ""}${size}px 'Courier New', Courier, monospace`;
+
   ctx.save();
-  if (signatureImage) {
-    drawImageContain(ctx, signatureImage, x - 120, y - 72, 240, 96);
-  } else {
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 3;
+  getFittedFont(ctx, text, fontTemplate, Math.max(0, availableWidth - 24), startSize, minSize);
+  const textWidth = ctx.measureText(text).width;
+  const textX = startX + (availableWidth - textWidth) / 2;
+  const underlineY = y + 8;
+
+  if (underline) {
+    ctx.strokeStyle = "#202020";
+    ctx.lineWidth = 2;
+    ctx.setLineDash([2, 6]);
     ctx.beginPath();
-    ctx.moveTo(x - 70, y - 8);
-    ctx.bezierCurveTo(x - 46, y - 62, x - 22, y + 12, x + 8, y - 42);
-    ctx.bezierCurveTo(x + 34, y - 78, x + 42, y + 6, x + 90, y - 30);
+    ctx.moveTo(startX, underlineY);
+    ctx.lineTo(endX, underlineY);
     ctx.stroke();
   }
+
+  ctx.setLineDash([]);
+  ctx.fillStyle = "#111111";
+  ctx.textAlign = "left";
+  ctx.fillText(text, textX, y);
+  ctx.restore();
+};
+
+const drawLabeledCertificateRow = (ctx, label, value, x, endX, y) => {
+  ctx.save();
+  ctx.fillStyle = "#111111";
+  ctx.textAlign = "left";
+  ctx.font = "25px Arial, sans-serif";
+  ctx.fillText(label, x, y);
+  const valueStartX = x + ctx.measureText(label).width + 12;
+  ctx.restore();
+  drawDottedValue(ctx, value, valueStartX, endX, y, {
+    startSize: 29,
+    minSize: 20,
+    bold: true,
+  });
+};
+
+const drawCertificateSignature = (ctx, x, y, name, title) => {
+  ctx.save();
   ctx.strokeStyle = GOLD;
   ctx.lineWidth = 2;
   ctx.beginPath();
@@ -585,54 +670,11 @@ const drawCertificateSignature = (ctx, x, y, name, title, color = NAVY, signatur
   ctx.stroke();
   ctx.textAlign = "center";
   ctx.fillStyle = NAVY;
-  ctx.font = "30px Georgia, 'Times New Roman', serif";
+  ctx.font = "22px Georgia, 'Times New Roman', serif";
   ctx.fillText(name, x, y + 65);
   ctx.fillStyle = RED;
-  ctx.font = "26px Georgia, 'Times New Roman', serif";
+  ctx.font = "16px Georgia, 'Times New Roman', serif";
   ctx.fillText(title, x, y + 101);
-  ctx.restore();
-};
-
-const drawFittedCenteredText = (ctx, text, x, y, maxWidth, fontTemplate, startSize, minSize = 42) => {
-  const value = String(text || "-");
-  let size = startSize;
-  do {
-    ctx.font = fontTemplate(size);
-    if (ctx.measureText(value).width <= maxWidth || size <= minSize) break;
-    size -= 2;
-  } while (size >= minSize);
-  ctx.fillText(value, x, y);
-};
-
-const drawCertificateDetailsRow = (ctx, items, centerX, y, fontSize = 28) => {
-  const separator = "|";
-  const gap = 20;
-  const labelFont = `${fontSize}px Georgia, 'Times New Roman', serif`;
-  const valueFont = `bold ${fontSize}px Arial, sans-serif`;
-  const separatorFont = `${fontSize + 4}px Georgia, 'Times New Roman', serif`;
-
-  ctx.save();
-  const parts = [];
-  items.forEach((item, index) => {
-    ctx.font = labelFont;
-    parts.push({ text: item.label, font: labelFont, color: NAVY, width: ctx.measureText(item.label).width });
-    ctx.font = valueFont;
-    parts.push({ text: item.value, font: valueFont, color: item.valueColor || NAVY, width: ctx.measureText(item.value).width });
-    if (index < items.length - 1) {
-      ctx.font = separatorFont;
-      parts.push({ text: separator, font: separatorFont, color: GOLD, width: ctx.measureText(separator).width });
-    }
-  });
-
-  const totalWidth = parts.reduce((sum, part) => sum + part.width, 0) + gap * (parts.length - 1);
-  let x = centerX - totalWidth / 2;
-  ctx.textAlign = "left";
-  parts.forEach((part, index) => {
-    ctx.font = part.font;
-    ctx.fillStyle = part.color;
-    ctx.fillText(part.text, x, y);
-    x += part.width + (index < parts.length - 1 ? gap : 0);
-  });
   ctx.restore();
 };
 
@@ -664,7 +706,7 @@ const drawHeader = (ctx, width, niteLogo, isoLogo, compact = false) => {
   }
 };
 
-export const downloadCertificatePdf = async ({ student, subjects, marks }) => {
+export const renderCertificateCanvas = async ({ student, subjects, marks }) => {
   if (document.fonts) {
     await document.fonts.load("70px 'Old English Text MT'");
   }
@@ -674,12 +716,11 @@ export const downloadCertificatePdf = async ({ student, subjects, marks }) => {
   canvas.width = 1684;
   canvas.height = 1190;
   const ctx = canvas.getContext("2d");
-  const [certificateBackground, niteLogo, isoLogo, niteRedSeal, authorisedSignature] = await Promise.all([
+  const [certificateBackground, niteLogo, isoLogo, niteRedSeal] = await Promise.all([
     loadOptionalImage(ASSETS.certificateBackground),
     loadOptionalImage(ASSETS.niteLogo),
     loadOptionalImage(ASSETS.isoLogo),
     loadOptionalImage(ASSETS.niteRedSeal),
-    loadOptionalImage(ASSETS.authorisedSignature),
   ]);
 
   ctx.fillStyle = "#ffffff";
@@ -697,12 +738,12 @@ export const downloadCertificatePdf = async ({ student, subjects, marks }) => {
   ctx.textAlign = "center";
   ctx.fillStyle = NAVY;
   ctx.font = "bold 52px Georgia, 'Times New Roman', serif";
-  ctx.fillText("NAWAB INSTITUTE OF", canvas.width / 2, 173);
-  ctx.fillText("TECHNICAL EDUCATION", canvas.width / 2, 231);
+  ctx.fillText("NAWAB INSTITUTE OF", canvas.width / 2, 165);
+  ctx.fillText("TECHNICAL EDUCATION", canvas.width / 2, 223);
   ctx.fillStyle = RED;
   ctx.font = "24px Arial, sans-serif";
-  ctx.fillText("CERTIFIED INTERNATIONAL STANDARDS ORGANIZATION", canvas.width / 2, 281);
-  ctx.fillText("ISO 9001:2015", canvas.width / 2, 317);
+  ctx.fillText("CERTIFIED INTERNATIONAL STANDARDS ORGANIZATION", canvas.width / 2, 273);
+  ctx.fillText("ISO 9001:2015", canvas.width / 2, 309);
 
   if (niteLogo) {
     const watermarkSize = 750;
@@ -717,60 +758,100 @@ export const downloadCertificatePdf = async ({ student, subjects, marks }) => {
     );
   }
 
-  ctx.fillStyle = NAVY;
-  ctx.font = "70px 'Old English Text MT', 'Cloister Black', Georgia, serif";
-  ctx.fillText("Certificate Of Completion", canvas.width / 2, 455);
-  ctx.font = "32px Georgia, 'Times New Roman', serif";
-  ctx.fillText("This is to certify that", canvas.width / 2, 510);
+  const contentLeft = 185;
+  const contentRight = 1510;
+  const courseName = formatCertificateCourse(student.courseName);
+  const completionDate = getCertificateCompletionDate(student);
 
-  const studentNameY = 580;
-  drawFittedCenteredText(
-    ctx,
-    student.name || "-",
-    canvas.width / 2,
-    studentNameY,
-    900,
-    (size) => `bold ${size}px 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif`,
-    60,
-    44
-  );
-  ctx.strokeStyle = GOLD;
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(460, studentNameY + 24);
-  ctx.lineTo(1224, studentNameY + 24);
-  ctx.stroke();
+  ctx.fillStyle = "#111111";
+  ctx.font = "58px 'Old English Text MT', 'Cloister Black', Georgia, serif";
+  ctx.fillText("Honour’s Diploma", canvas.width / 2, 402);
+  ctx.font = "bold 24px Arial, sans-serif";
+  ctx.fillText("IN", canvas.width / 2, 452);
+  drawDottedValue(ctx, courseName, 560, 1124, 500, {
+    startSize: 35,
+    minSize: 24,
+    bold: true,
+    underline: false,
+  });
 
-  ctx.fillStyle = NAVY;
-  ctx.font = "27px Georgia, 'Times New Roman', serif";
-  ctx.fillText("has successfully completed the course", canvas.width / 2, 650);
-  drawFittedCenteredText(
+  drawLabeledCertificateRow(
     ctx,
-    formatCertificateCourse(student.courseName),
-    canvas.width / 2,
-    704,
-    1120,
-    (size) => `bold ${size}px Georgia, 'Times New Roman', serif`,
-    38,
-    24
+    "Certified that Mrs./Mr./Smt./Shri.",
+    student.name,
+    contentLeft,
+    contentRight,
+    584
   );
+  drawLabeledCertificateRow(
+    ctx,
+    "Son/Daughter/Wife of Smt./Shri.",
+    student.fatherName || student.guardianName,
+    contentLeft,
+    contentRight,
+    648
+  );
+  drawLabeledCertificateRow(ctx, "Resident of", student.address, contentLeft, contentRight, 712);
 
-  drawCertificateDetailsRow(
+  ctx.save();
+  ctx.fillStyle = "#111111";
+  ctx.textAlign = "left";
+  ctx.font = "25px Arial, sans-serif";
+  const durationLabel = "Has undergone";
+  ctx.fillText(durationLabel, contentLeft, 780);
+  const durationStartX = contentLeft + ctx.measureText(durationLabel).width + 10;
+  const durationEndX = 945;
+  drawDottedValue(
     ctx,
-    [
-      { label: "Duration:", value: formatCourseDuration(student.courseDuration) },
-      { label: "Grade:", value: `${data.grade} (${data.percentage}%)`, valueColor: GOLD },
-    ],
-    canvas.width / 2,
-    765,
-    28
+    formatCertificateDuration(student.courseDuration),
+    durationStartX,
+    durationEndX,
+    780,
+    { startSize: 29, minSize: 20, bold: true }
   );
+  ctx.fillText("Months Diploma/Certificate Course in", durationEndX + 14, 780);
+  ctx.restore();
+
+  drawDottedValue(ctx, courseName, contentLeft, contentRight, 844, {
+    startSize: 34,
+    minSize: 24,
+    bold: true,
+    underline: false,
+  });
+
+  ctx.save();
+  ctx.fillStyle = "#111111";
+  ctx.textAlign = "left";
+  ctx.font = "25px Arial, sans-serif";
+  const dateLabel = "Imparted by the institution from";
+  ctx.fillText(dateLabel, contentLeft, 908);
+  const fromStartX = contentLeft + ctx.measureText(dateLabel).width + 10;
+  const fromEndX = 980;
+  drawDottedValue(
+    ctx,
+    formatCertificateDate(student.admissionDate),
+    fromStartX,
+    fromEndX,
+    908,
+    { startSize: 27, minSize: 20, bold: true }
+  );
+  ctx.fillText("to", fromEndX + 16, 908);
+  drawDottedValue(
+    ctx,
+    formatCertificateDate(completionDate),
+    fromEndX + 52,
+    contentRight,
+    908,
+    { startSize: 27, minSize: 20, bold: true }
+  );
+  ctx.restore();
+
   const footerCenters = [300, 660, 1020, 1380];
-  const footerCenterY = 980;
-  const qrSize = 148;
-  const isoWidth = 230;
-  const isoHeight = 178;
-  const sealSize = 180;
+  const footerCenterY = 1018;
+  const qrSize = 132;
+  const isoWidth = 190;
+  const isoHeight = 145;
+  const sealSize = 148;
 
   drawQr(
     ctx,
@@ -780,9 +861,9 @@ export const downloadCertificatePdf = async ({ student, subjects, marks }) => {
     qrSize
   );
   ctx.fillStyle = NAVY;
-  ctx.font = "16px Arial, sans-serif";
-  ctx.fillText("For more details and Diploma Verification:", footerCenters[0], 1080);
-  ctx.fillText("www.nawabinstitute.in or scan QR Code", footerCenters[0], 1104);
+  ctx.font = "13px Arial, sans-serif";
+  ctx.fillText("For more details and Diploma Verification:", footerCenters[0], 1108);
+  ctx.fillText("www.nawabinstitute.in or scan QR Code", footerCenters[0], 1126);
   drawImageContain(
     ctx,
     isoLogo,
@@ -802,13 +883,16 @@ export const downloadCertificatePdf = async ({ student, subjects, marks }) => {
   drawCertificateSignature(
     ctx,
     footerCenters[3],
-    footerCenterY + 24,
-    "Mandeep Singh",
-    "Director",
-    NAVY,
-    authorisedSignature
+    footerCenterY - 28,
+    "Head/Director/Principal",
+    "(Signature/Stamp Mandatory)"
   );
 
+  return canvas;
+};
+
+export const downloadCertificatePdf = async ({ student, subjects, marks }) => {
+  const canvas = await renderCertificateCanvas({ student, subjects, marks });
   canvasToPdf(canvas, `certificate-${sanitizeFilePart(student.rollNumber || student.name)}.pdf`, "landscape");
 };
 
@@ -818,13 +902,12 @@ export const downloadDmcPdf = async ({ student, subjects, marks }) => {
   canvas.width = 1190;
   canvas.height = 1684;
   const ctx = canvas.getContext("2d");
-  const [certificateBackground, niteLogo, isoLogo, msmeLogo, studentPhoto, authorisedSignature] = await Promise.all([
-    loadOptionalImage(ASSETS.certificateBackground),
+  const [certificateBackground, niteLogo, isoLogo, msmeLogo, studentPhoto] = await Promise.all([
+    loadOptionalImage(ASSETS.dmcBackground),
     loadOptionalImage(ASSETS.niteLogo),
     loadOptionalImage(ASSETS.isoLogo),
     loadOptionalImage(ASSETS.msmeLogo),
     loadOptionalImage(student.photoUrl),
-    loadOptionalImage(ASSETS.authorisedSignature),
   ]);
 
   ctx.fillStyle = CERTIFICATE_PAPER;
@@ -955,7 +1038,7 @@ export const downloadDmcPdf = async ({ student, subjects, marks }) => {
     canvas.width / 2,
     1565
   );
-  drawSignature(ctx, 910, 1435, "Mandeep Singh", "Director", "#123bff", authorisedSignature);
+  drawSignature(ctx, 910, 1435, "Head/Director/Principal", "(Signature/Stamp Mandatory)");
   drawImageContain(ctx, msmeLogo, 300, 1397, 165, 86);
 
   ctx.fillStyle = NAVY;

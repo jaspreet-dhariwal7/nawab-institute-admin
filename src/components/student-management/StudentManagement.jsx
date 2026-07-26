@@ -56,6 +56,14 @@ const normalizeStudent = (student) => ({
     courseName: student.course_title || student.course_name || getCourseName(student.course),
     courseDuration: getCourseDuration(student),
     admissionDate: student.admission_date || student.admissionDate || "",
+    courseCompletionDate:
+      student.course_completion_date ||
+      student.courseCompletionDate ||
+      student.completion_date ||
+      student.completionDate ||
+      student.end_date ||
+      student.endDate ||
+      "",
     session: student.session || student.dob || student.date_of_birth || student.dateOfBirth || "",
     guardianName: student.guardian_name || student.guardianName || student.father_name || student.fatherName || "",
     motherName: student.mother_name || student.motherName || "",
@@ -831,6 +839,7 @@ export default function StudentManagement() {
         courseName: selectedStudent.courseName,
         courseDuration: selectedStudent.courseDuration,
         admissionDate: selectedStudent.admissionDate,
+        courseCompletionDate: selectedStudent.courseCompletionDate,
         address: selectedStudent.address,
         photoUrl: selectedStudent.avatarUrl,
         initials: getStudentInitials(selectedStudent.name),
@@ -1009,7 +1018,7 @@ export default function StudentManagement() {
 
               <DetailField label="Full Name" value={selectedStudent.name} />
               <DetailField label="Roll Number" value={selectedStudent.rollNumber} />
-              <DetailField label="Email" value={selectedStudent.email} />
+              <DetailField label="Email" value={selectedStudent.email} className="lowercase" />
               <DetailField label="Phone" value={selectedStudent.phone} />
               <DetailField label="Course" value={selectedStudent.courseName} />
               <DetailField label="Admission Date" value={formatDate(selectedStudent.admissionDate)} />
