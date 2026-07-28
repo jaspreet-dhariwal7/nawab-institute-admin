@@ -615,7 +615,14 @@ const drawDottedValue = (
   startX,
   endX,
   y,
-  { startSize = 25, minSize = 18, bold = false, underline = true } = {}
+  {
+    startSize = 25,
+    minSize = 18,
+    bold = false,
+    underline = true,
+    align = "center",
+    textPadding = 0,
+  } = {}
 ) => {
   const text = String(value || "-");
   const availableWidth = Math.max(0, endX - startX);
@@ -623,9 +630,19 @@ const drawDottedValue = (
     `${bold ? "bold " : ""}${size}px 'Courier New', Courier, monospace`;
 
   ctx.save();
-  getFittedFont(ctx, text, fontTemplate, Math.max(0, availableWidth - 24), startSize, minSize);
+  getFittedFont(
+    ctx,
+    text,
+    fontTemplate,
+    Math.max(0, availableWidth - textPadding * 2),
+    startSize,
+    minSize
+  );
   const textWidth = ctx.measureText(text).width;
-  const textX = startX + (availableWidth - textWidth) / 2;
+  const textX =
+    align === "left"
+      ? startX + textPadding
+      : startX + (availableWidth - textWidth) / 2;
   const underlineY = y + 8;
 
   if (underline) {
@@ -657,6 +674,8 @@ const drawLabeledCertificateRow = (ctx, label, value, x, endX, y) => {
     startSize: 29,
     minSize: 20,
     bold: true,
+    align: "left",
+    textPadding: 18,
   });
 };
 
@@ -708,7 +727,7 @@ const drawHeader = (ctx, width, niteLogo, isoLogo, compact = false) => {
 
 export const renderCertificateCanvas = async ({ student, subjects, marks }) => {
   if (document.fonts) {
-    await document.fonts.load("70px 'Old English Text MT'");
+    await document.fonts.load("58px 'Pirata One'");
   }
 
   const data = getDocData(student, subjects, marks);
@@ -733,7 +752,25 @@ export const renderCertificateCanvas = async ({ student, subjects, marks }) => {
   drawCertificateInnerBorder(ctx, canvas.width, canvas.height);
 
   drawImageContain(ctx, niteLogo, 175, 98, 215, 215);
-  drawCertificateNumberBox(ctx, 1330, 149, 270, data.certificateNumber);
+  const certificateNumberX = 1330;
+  const certificateNumberY = 70;
+  const certificateNumberWidth = 270;
+  const certificateNumberCenterX = certificateNumberX + certificateNumberWidth / 2;
+  drawCertificateNumberBox(
+    ctx,
+    certificateNumberX,
+    certificateNumberY,
+    certificateNumberWidth,
+    data.certificateNumber
+  );
+  drawQr(ctx, RESULT_VERIFY_URL, certificateNumberCenterX - 52, 158, 104);
+  ctx.save();
+  ctx.fillStyle = NAVY;
+  ctx.textAlign = "center";
+  ctx.font = "12px Arial, sans-serif";
+  ctx.fillText("For more details and Diploma Verification:", certificateNumberCenterX, 279);
+  ctx.fillText("www.nawabinstitute.in or scan QR Code", certificateNumberCenterX, 296);
+  ctx.restore();
 
   ctx.textAlign = "center";
   ctx.fillStyle = NAVY;
@@ -764,7 +801,7 @@ export const renderCertificateCanvas = async ({ student, subjects, marks }) => {
   const completionDate = getCertificateCompletionDate(student);
 
   ctx.fillStyle = "#111111";
-  ctx.font = "58px 'Old English Text MT', 'Cloister Black', Georgia, serif";
+  ctx.font = "58px 'Pirata One', 'Old English Text MT', 'Cloister Black', Georgia, serif";
   ctx.fillText("Honour’s Diploma", canvas.width / 2, 402);
   ctx.font = "bold 24px Arial, sans-serif";
   ctx.fillText("IN", canvas.width / 2, 452);
@@ -800,23 +837,33 @@ export const renderCertificateCanvas = async ({ student, subjects, marks }) => {
   const durationLabel = "Has undergone";
   ctx.fillText(durationLabel, contentLeft, 780);
   const durationStartX = contentLeft + ctx.measureText(durationLabel).width + 10;
-  const durationEndX = 945;
+  const durationEndX = durationStartX + 175;
   drawDottedValue(
     ctx,
     formatCertificateDuration(student.courseDuration),
     durationStartX,
     durationEndX,
     780,
-    { startSize: 29, minSize: 20, bold: true }
+    {
+      startSize: 29,
+      minSize: 20,
+      bold: true,
+      align: "left",
+      textPadding: 18,
+    }
   );
-  ctx.fillText("Months Diploma/Certificate Course in", durationEndX + 14, 780);
+  const courseLabel = "Months Diploma/Certificate Course in";
+  const courseLabelX = durationEndX + 14;
+  ctx.fillText(courseLabel, courseLabelX, 780);
+  const courseStartX = courseLabelX + ctx.measureText(courseLabel).width + 10;
   ctx.restore();
 
-  drawDottedValue(ctx, courseName, contentLeft, contentRight, 844, {
-    startSize: 34,
-    minSize: 24,
+  drawDottedValue(ctx, courseName, courseStartX, contentRight, 780, {
+    startSize: 29,
+    minSize: 20,
     bold: true,
-    underline: false,
+    align: "left",
+    textPadding: 18,
   });
 
   ctx.save();
@@ -824,46 +871,57 @@ export const renderCertificateCanvas = async ({ student, subjects, marks }) => {
   ctx.textAlign = "left";
   ctx.font = "25px Arial, sans-serif";
   const dateLabel = "Imparted by the institution from";
-  ctx.fillText(dateLabel, contentLeft, 908);
+  ctx.fillText(dateLabel, contentLeft, 850);
   const fromStartX = contentLeft + ctx.measureText(dateLabel).width + 10;
-  const fromEndX = 980;
+  const fromEndX = fromStartX + 260;
   drawDottedValue(
     ctx,
     formatCertificateDate(student.admissionDate),
     fromStartX,
     fromEndX,
-    908,
-    { startSize: 27, minSize: 20, bold: true }
+    850,
+    {
+      startSize: 27,
+      minSize: 20,
+      bold: true,
+      align: "left",
+      textPadding: 18,
+    }
   );
-  ctx.fillText("to", fromEndX + 16, 908);
+  ctx.fillText("to", fromEndX + 16, 850);
   drawDottedValue(
     ctx,
     formatCertificateDate(completionDate),
     fromEndX + 52,
     contentRight,
-    908,
-    { startSize: 27, minSize: 20, bold: true }
+    850,
+    {
+      startSize: 27,
+      minSize: 20,
+      bold: true,
+      align: "left",
+      textPadding: 18,
+    }
+  );
+  ctx.restore();
+
+  ctx.save();
+  ctx.fillStyle = "#111111";
+  ctx.textAlign = "left";
+  ctx.font = "25px Arial, sans-serif";
+  ctx.fillText(
+    "He/She has acquired good knowledge in theory as well as in practical in the above mentioned course",
+    contentLeft,
+    902
   );
   ctx.restore();
 
   const footerCenters = [300, 660, 1020, 1380];
-  const footerCenterY = 1018;
-  const qrSize = 132;
+  const footerCenterY = 1030;
   const isoWidth = 190;
   const isoHeight = 145;
   const sealSize = 148;
 
-  drawQr(
-    ctx,
-    RESULT_VERIFY_URL,
-    footerCenters[0] - qrSize / 2,
-    footerCenterY - qrSize / 2,
-    qrSize
-  );
-  ctx.fillStyle = NAVY;
-  ctx.font = "13px Arial, sans-serif";
-  ctx.fillText("For more details and Diploma Verification:", footerCenters[0], 1108);
-  ctx.fillText("www.nawabinstitute.in or scan QR Code", footerCenters[0], 1126);
   drawImageContain(
     ctx,
     isoLogo,
@@ -882,7 +940,7 @@ export const renderCertificateCanvas = async ({ student, subjects, marks }) => {
   );
   drawCertificateSignature(
     ctx,
-    footerCenters[3],
+    footerCenters[0],
     footerCenterY - 28,
     "Head/Director/Principal",
     "(Signature/Stamp Mandatory)"
