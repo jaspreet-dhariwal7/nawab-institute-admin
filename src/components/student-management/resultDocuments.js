@@ -727,7 +727,7 @@ const drawHeader = (ctx, width, niteLogo, isoLogo, compact = false) => {
 
 export const renderCertificateCanvas = async ({ student, subjects, marks }) => {
   if (document.fonts) {
-    await document.fonts.load("58px 'Pirata One'");
+    await document.fonts.load("65px 'Chomsky'");
   }
 
   const data = getDocData(student, subjects, marks);
@@ -801,7 +801,7 @@ export const renderCertificateCanvas = async ({ student, subjects, marks }) => {
   const completionDate = getCertificateCompletionDate(student);
 
   ctx.fillStyle = "#111111";
-  ctx.font = "58px 'Pirata One', 'Old English Text MT', 'Cloister Black', Georgia, serif";
+  ctx.font = "65px 'Chomsky', 'Old English Text MT', 'Cloister Black', Georgia, serif";
   ctx.fillText("Honour’s Diploma", canvas.width / 2, 402);
   ctx.font = "bold 24px Arial, sans-serif";
   ctx.fillText("IN", canvas.width / 2, 452);

@@ -1,6 +1,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@700&family=Work+Sans:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
+@font-face {
+  font-family: "Chomsky";
+  src: url("./assets/fonts/Chomsky.otf") format("opentype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
 :root {
   --brand-heading-font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
   --brand-heading-font-size: 48px;
